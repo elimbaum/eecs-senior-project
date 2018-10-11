@@ -6,9 +6,15 @@ Advisor: Rajit Manohar
 
 ## TODO
 
-- [ ] get set up on grace
+- [x] get set up on grace
+- [x] github
 - [ ] install LLVM
-- [ ] github
+- [x] reread DAISY
+- [ ] read FPGA paper?
+- [ ] read ADRES & other CGRA paper (dynamic translation!)
+- [x] read routing paper
+- [ ] look into how shared objects work, esp wrt BLAS
+- [ ] object code translation
 
 ## Important Dates
 
@@ -94,4 +100,38 @@ This is really cool!
 
 software conversion of old instruction sets. trying to maintain parallelism and keep overhead minimal. memory mapping (regular instructions => VLIW)
 
+the *issue* of VLIW is that it is not compatible with existing software. We want new system to handle translation without recompilation.
+
 running a firmware VM, essentially. Will cache previous translations.
+
+## Other Notes
+
+### AVLSI Wiki
+
+C to FPGA might be useful for figuring how to read code. Though perhaps they are only using C programs, not compiled C programs.
+
+I think I *should* look at CGRA.
+
+### FPGAs
+
+Reading from [this chapter](https://www.springer.com/cda/content/document/cda_downloaddocument/9781461435938-c2.pdf?SGWID=0-0-45-1333135-p174308376) and [this paper](https://www.hindawi.com/journals/ijrc/2009/259837/).
+
+FPGAs use LUTs, which are really just RAM blocks indexing a certain logical function through multiplexers. Not sure that this is what I want – maybe just pass transistors.
+
+Island style FPGA (aka mesh). logic block "islands" among routing connections. A large majority of the area is routing, so it may make more sense to optimize that!
+
+Hierarchical FPGA: blocks grouped into clusters.
+
+HSRA? Reconfigurable
+
+### Hardware Routing
+
+Dehon, Huang, Wawrzynek
+
+software optimizations to routing is not great. hardware can assist. authors do NOT exploit task-specific routing.
+
+HSRA: number of switches linear in number of endpoints. unique switch box set for every connection
+
+HSRA switches: T-switch (3), π switch (4). For this routing, add circuitry to the T-switch to back-propagate source/sink channels. NEAT! If switch has NOT been configured yet, it passes logical OR of its children to the parent. Use (historical) congestion to decide which path to choose. Or random.
+
+I think this optimization strategy is not super related to my project, but good to see some work on routing nonetheless. Victimization might be something I have to look at; my routing will probably be entirely in hardware unless I write a ROM program
