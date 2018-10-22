@@ -7,6 +7,7 @@ Advisor: Rajit Manohar
 ## TODO
 
 - [x] get set up on grace
+  - *really* get set up on grace
 - [x] github
 - [ ] RHEL VM? https://software.yale.edu/software/red-hat-enterprise-linux
 - [ ] install LLVM
@@ -18,6 +19,7 @@ Advisor: Rajit Manohar
 - [ ] object code translation
 - [ ] GNU BFD
   - I don't know if this is feasible. We're not going to write a linker into the chip... and we don't want to require recompilation (or only partial compilation): this should be binary compatible.
+  - maybe it is. LLVM IR.
 - [ ] LZW for processor? replace based on usage, use code table to figure out common general operations
 - [ ] profiling
 - [ ] look at Wiki Dynamic Translation bib!
@@ -49,34 +51,50 @@ new ideas:
 - open source compiler with JIT: LLVM (LLI).
   - *Read up more on JIT.*
 - Huffman coding the bus
-
 - switches on the function units? At runtime, configure the chip.
 
   - data bus is a one level tree. but it can also be multi-level. section functional units off into
   - balanced binary tree by default, but move the nodes around. programmable logic.
-
 - Can my firmware figure out what I'm doing? Each functional block swapped in
 
   - Matrix multiply, linear algebra, FFT
   - BLAS library for linear algebra.
   - shared object library
-
 - "Operand-Based Circuit Specialization"
 
   - cross between a CPU and an FPGA, but the FPGA programming is done at run time not compile
-
 - berkeley numerical algebra matrix matrix multiply for different machines
-
 - simulate new CPU.
-
 - LLVM
 
   - do it on grace
   - build own version of LLVM.
-
 - reread DAISY.
-
 - email to get wiki account
+
+### 20 Oct
+
+OS can do linking
+
+LLVM: use LLVM IR on chip, not code generation. JIT (LLI) generates the actual code. LLVM IR is architecture independent. IR would still have labels. easier to recognize patterns. even so, without this, dynamic linker would see labels.
+
+Do this, and loader doesn't depend on hardware. Machine independent binary. New "firmware" but software is the same.
+
+Work on software/firmware first.
+
+Functional blocks might be broken down – multiplier and adder, know topologies for each operation.
+
+LLI + IR benchmark. Rui Li has been working on this, talk to him.
+
+storage@yale.
+
+LLVM documentation to get started. they now have a RISC backend.
+
+reference implementation for RISC, this is for later.
+
+benchmarks: [linpack](http://www.netlib.org/benchmark/hpl/). (or LAPACK) later, would be interesting to do mixed code, linear algebra and not. look for uniprocessor implementation. need to get BLAS/base package, as well as benchmarks.
+
+basic: count instructions, figure out how many could be saved by doing hardware optimization.
 
 
 ## Notes
@@ -136,6 +154,12 @@ Look at the existing dynamic binary translation efforts cited in this paper -- t
 next-executing tail (NET) algorithm: find optimization candidates such as tight loops. NET works by identifying BACK branches, which are usually loops (cool!). If that code can be optimized (?) store PC in cache and substitute in optimized hardware.
 
 *There is an optimization to NET, and more discussion of it w.r.t. Dynamo, on the AVLSI wiki bib.*
+
+### NET
+
+watch for back branches to find loops/recursion => hot paths. different storage possibilities; either static code analysis & spanning tree or branch encoding. this is similar to coverage metic. take missed opportunity cost into account: sunk cost, kinda? if we've spent a long time trying to optimize this, ignore
+
+this only works on programs that do have a lot of hot paths and reuse. that's what i should be testing on.
 
 ### AVLSI Wiki
 
