@@ -22,7 +22,7 @@ Advisor: Rajit Manohar
   - maybe it is. LLVM IR.
 - [ ] LZW for processor? replace based on usage, use code table to figure out common general operations
 - [ ] profiling
-- [ ] look at Wiki Dynamic Translation bib!
+- [ ] **look at Wiki Dynamic Translation bib!**
   - [ ] Dynamo
   - [ ] CGRA dynamic paper bib
 - [ ] MorphoSys/TinyRISC: http://gram.eng.uci.edu/morphosys/
@@ -30,6 +30,10 @@ Advisor: Rajit Manohar
 ## Important Dates
 
 12 Sep: Prospectus Due
+
+## Project Notes
+
+
 
 ## Meeting Notes
 
@@ -196,3 +200,43 @@ I think this optimization strategy is not super related to my project, but good 
 How to figure out what is going on? LZW strikes me as a very simple idea (and count usage of each; throw away unused).
 
 Machine learning? I hate to say it, but this is the kind of thing it would be good for. What I'm really trying to do here is topical decompilation – what general operations are being performed. More specifically, looking at BLAS, we're trying to identify certain function signatures. But this needs to be ON-CHIP! it also needs to be very good. can't risk accidentally using the wrong functional unit. Maybe this is not the best idea.
+
+### LLVM Lang Ref
+
+From http://llvm.org/docs/LangRef.htm
+
+LLVM IR can be used as a bitcode, for use with a JIT. perfect. (maybe. how do we do subroutines? tbd)
+
+`@` is global, `%` is local.
+
+This is a bit dry. Might be best to work with examples.
+
+### LAPACK User Guide
+
+http://www.netlib.org/lapack/lug
+
+LAPACK is largely a wrapper to the lower-level BLAS. LAPACK includes a reference implementation of BLAS, which is non-optimized, but that's ok for our purposes.
+
+http://www.netlib.org/lapack/lawnspdf/lawn81.pdf quick install guide. Installed and tested! Mostly working, only one function failed to pass threshold.
+
+### Grace Setup
+
+SSH is disconnecting. Is this an interactive limitation? switch to pi_manohar
+
+get git set up; a repo in ~/projects/
+
+to install LLVM: had to `module load ...` to get Cmake and Ninja. (this is now in my bash profile) Then just following instructions here http://releases.llvm.org/7.0.0/docs/GettingStarted.html
+
+look at Rajit's VNC thing? **tmux**/screen?
+
+Using Tmux. I should change the prefix to something easier to type – maybe ^A.
+
+`cmake -G Ninja -DCMAKE_INSTALL_PREFIX=~/project/llvm ~/project/llvm-src/` to generate build file
+
+`ninja` to build (in parallel, by default)
+
+starting over, got some weird error about aarch64_neon_fmlal2 intrinsics. Trying clang instructions http://clang.llvm.org/get_started.html instead. Just LLVM and clang. Huh, don't know why it didn't work before. success!
+
+Reading: http://llvm.org/docs/LangRef.html LLVM language ref
+
+Now looking to install BLAS.
