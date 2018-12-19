@@ -10,7 +10,7 @@ Advisor: Rajit Manohar
   - *really* get set up on grace
 - [x] github
 - [ ] RHEL VM? https://software.yale.edu/software/red-hat-enterprise-linux
-- [ ] install LLVM
+- [x] install LLVM
 - [x] reread DAISY
 - [ ] read FPGA paper?
 - [ ] read ADRES & other CGRA paper (dynamic translation!)
@@ -99,6 +99,20 @@ reference implementation for RISC, this is for later.
 benchmarks: [linpack](http://www.netlib.org/benchmark/hpl/). (or LAPACK) later, would be interesting to do mixed code, linear algebra and not. look for uniprocessor implementation. need to get BLAS/base package, as well as benchmarks.
 
 basic: count instructions, figure out how many could be saved by doing hardware optimization.
+
+### 17 Dec
+
+USE MORE CORES!
+
+Spend a week writing up how LLVM works. Just to think about it.
+
+Do the ACT file for a block.
+
+Hardware unit tells JIT what units I have. JIT doesn't care.
+
+Easy solution: strict match to instruction. Harder: recognize more complex structures.
+
+emulate circuit on RISC. 
 
 
 ## Notes
@@ -211,6 +225,20 @@ LLVM IR can be used as a bitcode, for use with a JIT. perfect. (maybe. how do we
 
 This is a bit dry. Might be best to work with examples.
 
+### [Kaleidoscope: LLVM Tutorial](https://llvm.org/docs/tutorial/LangImpl01.html)
+
+Creating a language.
+
+Can't compile?
+
+```
+/tmp/kld-271d78.o:(.data+0x0): undefined reference to `llvm::EnableABIBreakingChecks'
+```
+
+lib/Support/Error.cpp isn't being loaded. abi-breaking.h is, but the extern is in there.
+
+Trying to recompile. May have messed something up?
+
 ### LAPACK User Guide
 
 http://www.netlib.org/lapack/lug
@@ -240,3 +268,7 @@ starting over, got some weird error about aarch64_neon_fmlal2 intrinsics. Trying
 Reading: http://llvm.org/docs/LangRef.html LLVM language ref
 
 Now looking to install BLAS.
+
+Updated `interactive` to request 7-day idle timeout. LLVM is now using a TON of memory to build??
+
+I don't really want to do VNC.
