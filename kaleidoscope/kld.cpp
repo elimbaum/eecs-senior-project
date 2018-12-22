@@ -42,10 +42,20 @@ static double NumVal;
 
 static int gettok() {
   static int LastChar = ' ';
+  static int incomplete = false;
+  int retval;
 
   // skip whitespace
-  while (isspace(LastChar))
+  while (isspace(LastChar)) {
+    if (LastChar == '\n') {
+      if (incomplete)
+        fprintf(stderr, "... ");
+      else
+        fprintf(stderr, "kld> ");
+    }
+
     LastChar = getchar();
+  }
 
   if (isalpha(LastChar)) { // identifier
     IdentifierStr = LastChar;
@@ -54,13 +64,14 @@ static int gettok() {
       IdentifierStr += LastChar;
 
     if (IdentifierStr == "def")
-      return tok_def;
-    if (IdentifierStr == "extern")
-      return tok_extern;
-    return tok_identifier;
+      retval = tok_def;
+    else if (IdentifierStr == "extern")
+      retval = tok_extern;
+    else
+      retval = tok_identifier;
   }
 
-  if (isdigit(LastChar) || LastChar == '.') { // number
+  else if (isdigit(LastChar) || LastChar == '.') { // number
     std::string NumStr;
     do { 
       NumStr += LastChar;
@@ -68,27 +79,38 @@ static int gettok() {
     } while (isdigit(LastChar) || LastChar == '.');
 
     NumVal = strtod(NumStr.c_str(), 0);
-    return tok_number;
+    retval = tok_number;
   }
 
   // comments
-  if (LastChar == '#') {
+  else if (LastChar == '#') {
     do
       LastChar = getchar();
     while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
 
     if (LastChar != EOF)
-      return gettok();
+      retval = gettok();
   }
 
-  if (LastChar == EOF)
+  else if (LastChar == EOF)
     return tok_eof;
+ 
+  else {
+    // Return raw character
+    int ThisChar = LastChar;
+    LastChar = getchar();
+    retval = ThisChar;
+  }
 
+  if (LastChar == '\n' && retval != ';') {
+    // unterminated expression
+    incomplete = true;
+    // fprintf(stderr, "... ");
+  } else {
+    incomplete = false;
+  }
 
-  // Return raw character
-  int ThisChar = LastChar;
-  LastChar = getchar();
-  return ThisChar;
+  return retval;
 }
 
 
@@ -509,7 +531,12 @@ static void HandleTopLevelExpression() {
 
 static void MainLoop() {
   while (true) {
-    fprintf(stderr, "(%c) kld> ", CurTok);
+    // if(CurTok > ' ')
+    //   fprintf(stderr, "(%c) kld> ", CurTok);
+    // else
+    //   fprintf(stderr, "(%d) kld> ", CurTok);
+    // TODO almost entirely working! just fix space-separated TLExp
+
     switch (CurTok) {
     case tok_eof:
       return;
