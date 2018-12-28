@@ -1,4 +1,4 @@
-FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs core`
+FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native`
 
-kld: kld.cpp
-	clang++ -g3 $^ -o $@ $(FLAGS)
+%: %.cpp
+	clang++ -g3 $^ -o $@ $(FLAGS) -rdynamic
