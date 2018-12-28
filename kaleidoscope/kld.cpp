@@ -535,10 +535,11 @@ static void MainLoop() {
     //   fprintf(stderr, "(%c) kld> ", CurTok);
     // else
     //   fprintf(stderr, "(%d) kld> ", CurTok);
-    // TODO almost entirely working! just fix space-separated TLExp
+    // TODO almost entirely working! just fix space-separated TLExpr
 
     switch (CurTok) {
     case tok_eof:
+      fprintf(stderr, "\n");
       return;
     case ';': // ignore top-level semicolons
       getNextToken();
