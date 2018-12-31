@@ -239,6 +239,13 @@ lib/Support/Error.cpp isn't being loaded. abi-breaking.h is, but the extern is i
 
 Trying to recompile. May have messed something up?
 
+`-DLLVM_DISABLE
+_ABI_BREAKING_CHECKS_ENFORCING=1` on compile fixes it. May need future fix if I actually need to include these libraries (this flag allows the headers to be included, without linking the actual library itself.) Chapter 3 compilation actually fixes this. `llvm-config` can include all the right libraries.
+
+Fixed the prompt-printing bug. need to keep track of when we have completed an expression or not.
+
+Now I can't link chapter 4. Things being included, but not found by the linker? looks like it's a linking issue. linking all libraries and it seems to work.
+
 ### LAPACK User Guide
 
 http://www.netlib.org/lapack/lug
