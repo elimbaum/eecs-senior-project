@@ -1,4 +1,5 @@
-FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native`
+LIBS=core mcjit native orcjit
+FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
 
 %: %.cpp
-	clang++ -g3 $^ -o $@ $(FLAGS) -rdynamic
+	clang++ -v -g3 -O0 $^ -o $@ $(FLAGS) -rdynamic

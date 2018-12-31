@@ -17,6 +17,7 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cstdio>
 #include <cstdint>
@@ -298,7 +299,7 @@ static int GetTokPrecedence() {
 
 static std::unique_ptr<ExprAST> ParseBinOpRHS(int ExprPrec,
                                               std::unique_ptr<ExprAST> LHS) {
-  while(1) {
+  while(true) {
     int TokPrec = GetTokPrecedence();
 
     // precedence too low -- stop
@@ -376,7 +377,8 @@ static std::unique_ptr<PrototypeAST> ParseExtern() {
 static std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
   if (auto E = ParseExpression()) {
     // anonymous proto
-    auto Proto = llvm::make_unique<PrototypeAST>("", std::vector<std::string>());
+    auto Proto = llvm::make_unique<PrototypeAST>("__anon_expr",
+                                                 std::vector<std::string>());
     return llvm::make_unique<FunctionAST>(std::move(Proto), std::move(E));
   }
   return nullptr;
@@ -396,6 +398,20 @@ static std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 
 Value *LogErrorV(const char * Str) {
   LogError(Str);
+  return nullptr;
+}
+
+Function * getFunction(std::string Name) {
+  // has it already been added to the current module?
+  // maybe, change the order of these. see which of these is being run when.
+  if (auto *F = TheModule->getFunction(Name))
+    return F;
+
+  // if not, look for existing prototype
+  auto FI = FunctionProtos.find(Name);
+  if (FI != FunctionProtos.end())
+    return FI->second->codegen();
+
   return nullptr;
 }
 
@@ -425,7 +441,7 @@ Value * BinaryExprAST::codegen() {
   case '*':
     return Builder.CreateFMul(L, R, "multmp");
   case '<':
-    return Builder.CreateFCmpULT(L, R, "cmptmp");
+    L =  Builder.CreateFCmpULT(L, R, "cmptmp");
     // convert bool to double (lang only supports double)
     return Builder.CreateUIToFP(L, Type::getDoubleTy(TheContext),
                                 "booltmp");
@@ -435,7 +451,7 @@ Value * BinaryExprAST::codegen() {
 }
 
 Value * CallExprAST::codegen() {
-  Function * CalleeF = TheModule->getFunction(Callee);
+  Function * CalleeF = getFunction(Callee);
   if (!CalleeF)
     return LogErrorV("Unknown function referened");
 
@@ -470,19 +486,17 @@ Function * PrototypeAST::codegen() {
 }
 
 Function * FunctionAST::codegen() {
-  // check for existing
-  Function * TheFunction = TheModule->getFunction(Proto->getName());
+  auto &P = *Proto;
+  
+  auto old = FunctionProtos.find(Proto->getName());
+  if (old != FunctionProtos.end()) {
+    fprintf(stderr, "already defined!\n");
+  }
 
-  // TODO: fix prototype/definition naming mismatch bug
-
-  if (!TheFunction)
-    TheFunction = Proto->codegen();
-
+  FunctionProtos[Proto->getName()] = std::move(Proto);
+  Function * TheFunction = getFunction(P.getName());
   if (!TheFunction)
     return nullptr;
-
-  if (!TheFunction->empty())
-    return (Function*)LogErrorV("Function cannot be redefined.");
 
   // create basic block for body
   BasicBlock * BB = BasicBlock::Create(TheContext, "entry", TheFunction);
@@ -530,8 +544,12 @@ static void HandleDefinition() {
   if (auto FnAST = ParseDefinition()) {
     if (auto * FnIR = FnAST->codegen()) {
       fprintf(stderr, "Read function definition:");
+
       FnIR->print(errs());
       fprintf(stderr, "\n");
+      // add to JIT
+      TheJIT->addModule(std::move(TheModule));
+      InitializeModuleAndPassManager();
     }
   } else
     getNextToken(); // error, skip
@@ -543,6 +561,7 @@ static void HandleExtern() {
       fprintf(stderr, "Read extern:");
       FnIR->print(errs());
       fprintf(stderr, "\n");
+      FunctionProtos[ProtoAST->getName()] = std::move(ProtoAST);
     }
   } else
     getNextToken();
@@ -551,9 +570,19 @@ static void HandleExtern() {
 static void HandleTopLevelExpression() {
   if (auto FnAST = ParseTopLevelExpr()) {
     if (auto *FnIR = FnAST->codegen()) {
-      fprintf(stderr, "Read top-level expr:");
-      FnIR->print(errs());
-      fprintf(stderr, "\n");
+      // create anon func for eval
+      auto H = TheJIT->addModule(std::move(TheModule));
+      InitializeModuleAndPassManager();
+
+      auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
+      assert(ExprSymbol && "Function not found");
+
+      // cast to double-returning function
+      double (*FP)() = (double (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
+      fprintf(stderr, "Evaluated to %f\n", FP());
+
+      // remove anon func
+      TheJIT->removeModule(H);
     }
   } else
     getNextToken();
@@ -562,7 +591,7 @@ static void HandleTopLevelExpression() {
 
 static void MainLoop() {
   while (true) {
-    // TODO almost entirely working! just fix space-separated TLExpr
+    // TODO fix space-separated TLExpr
 
     switch (CurTok) {
     case tok_eof:
@@ -584,6 +613,24 @@ static void MainLoop() {
   }
 }
 
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+/// putchard - putchar that takes a double and returns 0.
+extern "C" DLLEXPORT double putchard(double X) {
+  fputc((char)X, stderr);
+  return 0;
+}
+
+/// printd - printf that takes a double prints it as "%f\n", returning 0.
+extern "C" DLLEXPORT double printd(double X) {
+  fprintf(stderr, "%f\n", X);
+  return 0;
+}
+
 int main() {
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
@@ -591,7 +638,7 @@ int main() {
 
   BinopPrecedence['<'] = 10;
   BinopPrecedence['+'] = 20;
-  BinopPrecedence['-'] = 30;
+  BinopPrecedence['-'] = 20;
   BinopPrecedence['*'] = 40;
 
   fprintf(stderr, "kaleidoscope interpreter\n");
@@ -599,11 +646,12 @@ int main() {
   getNextToken();
 
   TheJIT = llvm::make_unique<KaleidoscopeJIT>();
+  InitializeModuleAndPassManager();
 
   MainLoop();
 
   // print generated code
-  TheModule->print(errs(), nullptr);
+  // TheModule->print(errs(), nullptr);
 
   return 0;
 }
