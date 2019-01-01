@@ -46,6 +46,10 @@ enum Token {
   // primary
   tok_identifier = -4,
   tok_number = -5,
+
+  tok_if = -6,
+  tok_then = -7,
+  tok_else = -8,
 };
 
 static std::string IdentifierStr;
@@ -78,6 +82,12 @@ static int gettok() {
       retval = tok_def;
     else if (IdentifierStr == "extern")
       retval = tok_extern;
+    else if (IdentifierStr == "if")
+      retval = tok_if;
+    else if (IdentifierStr == "then")
+      retval = tok_then;
+    else if (IdentifierStr == "else")
+      retval = tok_else;
     else
       retval = tok_identifier;
   }
@@ -172,6 +182,17 @@ public:
   CallExprAST(const std::string &Callee,
               std::vector<std::unique_ptr<ExprAST>> Args)
     : Callee(Callee), Args(std::move(Args)) {}
+  Value * codegen() override;
+};
+
+class IfExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> Cond, Then, Else;
+
+public:
+  IfExprAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
+            std::unique_ptr<ExprAST> Else)
+    : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
+
   Value * codegen() override;
 };
 
@@ -271,6 +292,34 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   return llvm::make_unique<CallExprAST>(IdName, std::move(Args));
 }
 
+static std::unique_ptr<ExprAST> ParseIfExpr() {
+  getNextToken();
+
+  auto Cond = ParseExpression();
+  if (! Cond)
+    return nullptr;
+
+  if (CurTok != tok_then)
+    return LogError("expected then");
+  getNextToken(); // eat then
+
+  auto Then = ParseExpression();
+  if (! Then)
+    return nullptr;
+
+  if (CurTok != tok_else)
+    return LogError("expected else");
+
+  getNextToken();
+
+  auto Else = ParseExpression();
+  if (!Else)
+    return nullptr;
+
+  return llvm::make_unique<IfExprAST>(std::move(Cond), std::move(Then),
+                                      std::move(Else));
+}
+
 // primary
 static std::unique_ptr<ExprAST> ParsePrimary() {
   switch (CurTok) {
@@ -282,6 +331,8 @@ static std::unique_ptr<ExprAST> ParsePrimary() {
     return ParseNumberExpr();
   case '(':
     return ParseParenExpr();
+  case tok_if:
+    return ParseIfExpr();
   }
 }
 
@@ -333,7 +384,6 @@ static std::unique_ptr<ExprAST> ParseExpression() {
 
   return ParseBinOpRHS(0, std::move(LHS));
 }
-
 
 // function prototypes
 static std::unique_ptr<PrototypeAST> ParsePrototype() {
@@ -404,13 +454,15 @@ Value *LogErrorV(const char * Str) {
 Function * getFunction(std::string Name) {
   // has it already been added to the current module?
   // maybe, change the order of these. see which of these is being run when.
-  if (auto *F = TheModule->getFunction(Name))
+  if (auto *F = TheModule->getFunction(Name)) {
     return F;
+  }
 
   // if not, look for existing prototype
   auto FI = FunctionProtos.find(Name);
-  if (FI != FunctionProtos.end())
+  if (FI != FunctionProtos.end()) {
     return FI->second->codegen();
+  }
 
   return nullptr;
 }
@@ -469,6 +521,54 @@ Value * CallExprAST::codegen() {
   return Builder.CreateCall(CalleeF, ArgsV, "calltmp");
 }
 
+Value * IfExprAST::codegen() {
+  Value * CondV = Cond->codegen();
+  if (!CondV)
+    return nullptr;
+
+  // bool to double
+  CondV = Builder.CreateFCmpONE(
+            CondV, ConstantFP::get(TheContext, APFloat(0.0)), "ifcond");
+
+  Function * TheFunction = Builder.GetInsertBlock()->getParent();
+
+  BasicBlock *ThenBB = BasicBlock::Create(TheContext, "then", TheFunction);
+  BasicBlock *ElseBB = BasicBlock::Create(TheContext, "else");
+  BasicBlock *MergeBB = BasicBlock::Create(TheContext, "ifcont");
+
+  Builder.CreateCondBr(CondV, ThenBB, ElseBB);
+
+  Builder.SetInsertPoint(ThenBB);
+
+  Value *ThenV = Then->codegen();
+  if (!ThenV)
+    return nullptr;
+
+  Builder.CreateBr(MergeBB);
+  ThenBB = Builder.GetInsertBlock();
+
+  // else block
+  TheFunction->getBasicBlockList().push_back(ElseBB);
+  Builder.SetInsertPoint(ElseBB);
+
+  Value * ElseV = Else->codegen();
+  if (!ElseV)
+    return nullptr;
+
+  Builder.CreateBr(MergeBB);
+  ElseBB = Builder.GetInsertBlock();
+
+  // Merge then/else
+  TheFunction->getBasicBlockList().push_back(MergeBB);
+  Builder.SetInsertPoint(MergeBB);
+  PHINode * PN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "iftmp");
+  PN->addIncoming(ThenV, ThenBB);
+  PN->addIncoming(ElseV, ElseBB);
+
+  return PN;
+}
+
+
 Function * PrototypeAST::codegen() {
   std::vector<Type *> Doubles(Args.size(),
                               Type::getDoubleTy(TheContext));
@@ -487,12 +587,6 @@ Function * PrototypeAST::codegen() {
 
 Function * FunctionAST::codegen() {
   auto &P = *Proto;
-  
-  auto old = FunctionProtos.find(Proto->getName());
-  if (old != FunctionProtos.end()) {
-    fprintf(stderr, "already defined!\n");
-  }
-
   FunctionProtos[Proto->getName()] = std::move(Proto);
   Function * TheFunction = getFunction(P.getName());
   if (!TheFunction)
