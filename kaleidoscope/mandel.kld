@@ -1,0 +1,19 @@
+# mandelbrot set generator
+
+def printdensity(d)
+  if d > 8 then
+    putchard(32) # space
+  else if d > 4 then
+    putchard(46) # period
+  else if d > 2 then
+    putchard(43) # plus
+  else
+    putchard(35); # hash
+
+printdensity(1) :
+printdensity(2) :
+printdensity(3) :
+printdensity(4) :
+printdensity(5) :
+printdensity(9) :
+putchard(10) ;
