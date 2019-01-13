@@ -1,19 +1,44 @@
 # mandelbrot set generator
 
+# ascii gradient: [ .:-=+*#%@]
 def printdensity(d)
-  if d > 8 then
-    putchard(32) # space
+  if d > 128 then
+    putchard(64) # @
+  else if d > 64 then
+    putchard(35) # #
+  else if d > 32 then
+    putchard(43) # +
+  else if d > 16 then
+    putchard(61) # =
+  else if d > 8 then
+    putchard(45) # -
   else if d > 4 then
-    putchard(46) # period
+    putchard(58) # :
   else if d > 2 then
-    putchard(43) # plus
+    putchard(46) # .
   else
-    putchard(35); # hash
+    putchard(32) # space
+  ;
 
-printdensity(1) :
-printdensity(2) :
-printdensity(3) :
-printdensity(4) :
-printdensity(5) :
-printdensity(9) :
-putchard(10) ;
+# determine whether specific location diverges
+# z = z^2 + c
+def mandelconverger(real imag iters creal cimag)
+  if iters > 255 | (real * real + imag * imag > 4) then
+    iters
+  else mandelconverger(real * real - imag * imag + creal,
+                       2 * real * imag + cimag,
+                       iters + 1, creal, cimag);
+
+def mandelconverge(real imag)
+  mandelconverger(real, imag, 0, real, imag);
+
+def mandelhelp(xmin xmax xstep  ymin ymax ystep)
+  for y = ymin, y < ymax, ystep in (
+    (for x = xmin, x < xmax, xstep in
+      printdensity(mandelconverge(x, y)))
+    : putchard(10))
+
+# print mandel @ location with magnification
+def mandel(realstart imagstart realmag imagmag)
+  mandelhelp(realstart, realstart + realmag * 78, realmag,
+             imagstart, imagstart + imagmag * 30, imagmag);
