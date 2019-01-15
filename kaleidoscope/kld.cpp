@@ -1,34 +1,38 @@
-#include "KaleidoscopeJIT.h"
 #include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Transforms/InstCombine/InstCombine.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Target/TargetOptions.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cstdio>
-#include <cstdint>
 #include <cstdlib>
 #include <map>
 #include <memory>
 #include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 using namespace llvm;
-using namespace llvm::orc;
+using namespace llvm::sys;
 
 
 // ============================================================
@@ -571,7 +575,7 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
   std::string FnName;
 
   unsigned Kind = 0; // 0 id, 1 un, 2 bi
-  unsigned BinaryPrecendence = 30;
+  unsigned BinaryPrecedence = 30;
 
   switch (CurTok) {
   default:
@@ -605,7 +609,7 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
     if (CurTok == tok_number) {
       if (NumVal < 1 || NumVal > 100)
         return LogErrorP("Invalid precedence: must be 1..100");
-      BinaryPrecendence = (unsigned)NumVal;
+      BinaryPrecedence = (unsigned)NumVal;
       getNextToken();
     }
     break;
@@ -625,8 +629,8 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
   if (Kind && ArgNames.size() != Kind)
     return LogErrorP("Invalid number of operands for operator");
 
-  return llvm::make_unique<PrototypeAST>(FnName, std::move(ArgNames), Kind != 0,
-                                         BinaryPrecendence);
+  return llvm::make_unique<PrototypeAST>(FnName, ArgNames, Kind != 0,
+                                         BinaryPrecedence);
 }
 
 static std::unique_ptr<FunctionAST> ParseDefinition() {
@@ -664,8 +668,7 @@ static LLVMContext TheContext;
 static IRBuilder<> Builder(TheContext);
 static std::unique_ptr<Module> TheModule;
 static std::map<std::string, AllocaInst *> NamedValues;
-static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
-static std::unique_ptr<KaleidoscopeJIT> TheJIT;
+// static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 static std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 
 Value *LogErrorV(const char * Str) {
@@ -982,8 +985,6 @@ Function * FunctionAST::codegen() {
 
     verifyFunction(*TheFunction);
 
-    TheFPM->run(*TheFunction); // optimize!
-
     return TheFunction;
   }
 
@@ -999,17 +1000,17 @@ Function * FunctionAST::codegen() {
 void InitializeModuleAndPassManager(void) {
   // Open module
   TheModule = llvm::make_unique<Module>("kld_jit", TheContext);
-  TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
-  
-  // Create pass manager
-  TheFPM = llvm::make_unique<legacy::FunctionPassManager>(TheModule.get());
-  TheFPM->add(createPromoteMemoryToRegisterPass()); // mem2reg
-  TheFPM->add(createInstructionCombiningPass());
-  TheFPM->add(createReassociatePass());
-  TheFPM->add(createGVNPass()); // common subexpr
-  TheFPM->add(createCFGSimplificationPass());
+  // TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+  // 
+  // // Create pass manager
+  // TheFPM = llvm::make_unique<legacy::FunctionPassManager>(TheModule.get());
+  // TheFPM->add(createPromoteMemoryToRegisterPass()); // mem2reg
+  // TheFPM->add(createInstructionCombiningPass());
+  // TheFPM->add(createReassociatePass());
+  // TheFPM->add(createGVNPass()); // common subexpr
+  // TheFPM->add(createCFGSimplificationPass());
 
-  TheFPM->doInitialization();
+  // TheFPM->doInitialization();
 }
 
 static void HandleDefinition() {
@@ -1023,8 +1024,8 @@ static void HandleDefinition() {
       // I think to allow function update, we need to save the VModuleKey
       // returned here, and then (if a function of that name already exists)
       // first remove the old module, then add the new one.
-      TheJIT->addModule(std::move(TheModule));
-      InitializeModuleAndPassManager();
+      // TheJIT->addModule(std::move(TheModule));
+      // InitializeModuleAndPassManager();
     }
   } else
     getNextToken(); // error, skip
@@ -1044,29 +1045,30 @@ static void HandleExtern() {
 
 static void HandleTopLevelExpression() {
   if (auto FnAST = ParseTopLevelExpr()) {
-    if (FnAST->codegen()) {
-      // create anon func for eval
-      auto H = TheJIT->addModule(std::move(TheModule));
-      InitializeModuleAndPassManager();
+    FnAST->codegen();
+    // if (FnAST->codegen()) {
+    //   // create anon func for eval
+    //   auto H = TheJIT->addModule(std::move(TheModule));
+    //   InitializeModuleAndPassManager();
 
-      auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
-      assert(ExprSymbol && "Function not found");
+    //   auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
+    //   assert(ExprSymbol && "Function not found");
 
-      // cast to double-returning function
-      // double (*FP)() = (double (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
-      
-      double (*FP)() = nullptr;
-      if (auto ExprAddr = ExprSymbol.getAddress())
-        FP = (double(*)())*ExprAddr;
-      else {
-        logAllUnhandledErrors(ExprAddr.takeError(), llvm::errs(), "kaleidoscope error: ");
-        exit(1);
-      }
-      fprintf(stderr, "Evaluated to %f\n", FP());
+    //   // cast to double-returning function
+    //   // double (*FP)() = (double (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
+    //   
+    //   double (*FP)() = nullptr;
+    //   if (auto ExprAddr = ExprSymbol.getAddress())
+    //     FP = (double(*)())*ExprAddr;
+    //   else {
+    //     logAllUnhandledErrors(ExprAddr.takeError(), llvm::errs(), "kaleidoscope error: ");
+    //     exit(1);
+    //   }
+    //   fprintf(stderr, "Evaluated to %f\n", FP());
 
-      // remove anon func
-      TheJIT->removeModule(H);
-    }
+    //   // remove anon func
+    //   TheJIT->removeModule(H);
+    // }
   } else
     getNextToken();
 }
@@ -1114,10 +1116,6 @@ extern "C" DLLEXPORT double printd(double X) {
 }
 
 int main() {
-  InitializeNativeTarget();
-  InitializeNativeTargetAsmPrinter();
-  InitializeNativeTargetAsmParser();
-
   BinopPrecedence['='] = 2;
   BinopPrecedence['<'] = 10;
   BinopPrecedence['+'] = 20;
@@ -1128,13 +1126,61 @@ int main() {
   fprintf(stderr, "kld> ");
   getNextToken();
 
-  TheJIT = llvm::make_unique<KaleidoscopeJIT>();
   InitializeModuleAndPassManager();
 
   MainLoop();
 
-  // print generated code
-  // TheModule->print(errs(), nullptr);
+  InitializeAllTargetInfos();
+  InitializeAllTargets();
+  InitializeAllTargetMCs();
+  InitializeAllAsmParsers();
+  InitializeAllAsmPrinters();
+
+  auto TargetTriple = sys::getDefaultTargetTriple();
+  TheModule->setTargetTriple(TargetTriple);
+
+  std::string Error;
+  auto Target = TargetRegistry::lookupTarget(TargetTriple, Error);
+
+  // Print an error and exit if we couldn't find the requested target.
+  // This generally occurs if we've forgotten to initialise the
+  // TargetRegistry or we have a bogus target triple.
+  if (!Target) {
+    errs() << Error;
+    return 1;
+  }
+
+  auto CPU = "generic";
+  auto Features = "";
+
+  TargetOptions opt;
+  auto RM = Optional<Reloc::Model>();
+  auto TheTargetMachine =
+      Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+
+  TheModule->setDataLayout(TheTargetMachine->createDataLayout());
+
+  auto Filename = "output.o";
+  std::error_code EC;
+  raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
+
+  if (EC) {
+    errs() << "Could not open file: " << EC.message();
+    return 1;
+  }
+
+  legacy::PassManager pass;
+  auto FileType = TargetMachine::CGFT_ObjectFile;
+
+  if (TheTargetMachine->addPassesToEmitFile(pass, dest, FileType)) {
+    errs() << "TheTargetMachine can't emit a file of this type";
+    return 1;
+  }
+
+  pass.run(*TheModule);
+  dest.flush();
+
+  outs() << "Wrote " << Filename << "\n";
 
   return 0;
 }
