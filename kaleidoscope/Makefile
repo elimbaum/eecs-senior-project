@@ -1,6 +1,5 @@
 # LIBS=core orcjit native analysis executionengine instcombine object runtimedyld scalaropts support
-# LIBS=core mcjit native
-LIBS=all
+LIBS=core mcjit native
 FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
 
 %: %.cpp
