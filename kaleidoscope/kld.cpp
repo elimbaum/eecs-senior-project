@@ -56,7 +56,36 @@ enum Token {
 
   // var definition
   tok_var = -13,
+
+  tok_import = -14
 };
+
+// Reads charcters from source.
+class Reader {
+  std::vector<FILE *> sources;
+
+public:
+  char getchar() {
+    if (sources.size() == 0)
+      return EOF;
+
+    return getc(sources.back());
+  }
+
+  void pushsource(FILE * _source) {
+    sources.push_back(_source);
+  }
+
+  void popsource() {
+    sources.pop_back();
+  }
+
+  bool isStdin() {
+    return sources.back() == stdin;
+  }
+};
+
+Reader reader;
 
 static std::string IdentifierStr;
 static double NumVal;
@@ -68,20 +97,21 @@ static int gettok() {
 
   // skip whitespace
   while (isspace(LastChar)) {
-    if (LastChar == '\n') {
+    // No prompts if reading from file.
+    if (LastChar == '\n' && reader.isStdin()) {
       if (incomplete)
         fprintf(stderr, ".... ");
       else
         fprintf(stderr, "kld> ");
     }
 
-    LastChar = getchar();
+    LastChar = reader.getchar();
   }
 
   if (isalpha(LastChar)) { // identifier
     IdentifierStr = LastChar;
     // eat maximal string
-    while (isalnum((LastChar = getchar())))
+    while (isalnum((LastChar = reader.getchar())))
       IdentifierStr += LastChar;
 
     if (IdentifierStr == "def")
@@ -104,6 +134,8 @@ static int gettok() {
       retval = tok_unary;
     else if (IdentifierStr == "var")
       retval = tok_var;
+    else if (IdentifierStr == "import")
+      retval = tok_import;
     else
       retval = tok_identifier;
   }
@@ -112,7 +144,7 @@ static int gettok() {
     std::string NumStr;
     do { 
       NumStr += LastChar;
-      LastChar = getchar();
+      LastChar = reader.getchar();
     } while (isdigit(LastChar) || LastChar == '.');
 
     NumVal = strtod(NumStr.c_str(), 0);
@@ -122,20 +154,23 @@ static int gettok() {
   // comments
   else if (LastChar == '#') {
     do
-      LastChar = getchar();
+      LastChar = reader.getchar();
     while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
 
     if (LastChar != EOF)
       retval = gettok();
   }
 
-  else if (LastChar == EOF)
+  else if (LastChar == EOF) {
+    // might have another file coming, reset
+    LastChar = '\n';
     return tok_eof;
- 
+  }
+
   else {
     // Return raw character
     int ThisChar = LastChar;
-    LastChar = getchar();
+    LastChar = reader.getchar();
     retval = ThisChar;
   }
 
@@ -190,6 +225,16 @@ public:
   VarExprAST(std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames,
              std::unique_ptr<ExprAST> Body)
     : VarNames(std::move(VarNames)), Body(std::move(Body)) {}
+
+  Value * codegen() override;
+};
+
+// Load library
+class ImportExprAST : public ExprAST {
+  std::vector<std::string> Files;
+
+public:
+  ImportExprAST(std::vector<std::string> Files) : Files(std::move(Files)) {}
 
   Value * codegen() override;
 };
@@ -444,7 +489,7 @@ static std::unique_ptr<ExprAST> ParseVarExpr() {
   if (CurTok != tok_identifier)
     return LogError("expected identifier after var");
 
-  while (1) {
+  while (true) {
     std::string Name = IdentifierStr;
     getNextToken();
 
@@ -479,6 +524,36 @@ static std::unique_ptr<ExprAST> ParseVarExpr() {
   return llvm::make_unique<VarExprAST>(std::move(VarNames), std::move(Body));
 }
 
+// import file1 [, file2 [, ...]]
+// Syntax similar to var expr
+static std::unique_ptr<ExprAST> ParseImportExpr() {
+  getNextToken(); // eat 'import'
+
+  std::vector<std::string> Files;
+
+  // at least one file required
+  if (CurTok != tok_identifier)
+    return LogError("expected filename after import");
+
+  while (true) {
+    // unfortunately no whitespace/special character filenames are supported
+    std::string File = IdentifierStr;
+    getNextToken();
+
+    Files.push_back(File);
+
+    // list?
+    if (CurTok != ',') break;
+    getNextToken();
+
+    if (CurTok != tok_identifier)
+      return LogError("expected filename list after import");
+  }
+
+  // All filenames parsed!
+  return llvm::make_unique<ImportExprAST>(std::move(Files));
+}
+
 // primary
 static std::unique_ptr<ExprAST> ParsePrimary() {
   switch (CurTok) {
@@ -502,6 +577,8 @@ static std::unique_ptr<ExprAST> ParsePrimary() {
     return ParseForExpr();
   case tok_var:
     return ParseVarExpr();
+  case tok_import:
+    return ParseImportExpr();
   }
 }
 
@@ -747,6 +824,26 @@ Value * VarExprAST::codegen() {
     NamedValues[VarNames[i].first] = OldBindings[i];
 
   return BodyVal;
+}
+
+static void MainLoop(); 
+
+// JIT handles import.
+Value * ImportExprAST::codegen() {
+  for (unsigned i = 0, e = Files.size(); i != e; ++i) {
+    FILE * f = fopen((Files[i] + ".kld").c_str(), "r");
+    if (!f) {
+      perror("import");
+      return LogErrorV("Could not open file");
+    }
+
+    reader.pushsource(f);
+    // MainLoop(); // TODO: disable prompt
+    // reader.revertsource();
+  }
+
+  // Don't actually generate any IR
+  return nullptr;
 }
 
 Value * UnaryExprAST::codegen() {
@@ -1077,8 +1174,15 @@ static void MainLoop() {
 
     switch (CurTok) {
     case tok_eof:
-      fprintf(stderr, "\n");
-      return;
+      if (reader.isStdin()) {
+        fprintf(stderr, "\n");
+        return;
+      }
+      else {
+        reader.popsource();
+        getNextToken();
+        break;
+      }
     case ';': // ignore top-level semicolons
       getNextToken();
       break;
@@ -1118,18 +1222,20 @@ int main() {
   InitializeNativeTargetAsmPrinter();
   InitializeNativeTargetAsmParser();
 
+  TheJIT = llvm::make_unique<KaleidoscopeJIT>();
+  InitializeModuleAndPassManager();
+
   BinopPrecedence['='] = 2;
   BinopPrecedence['<'] = 10;
   BinopPrecedence['+'] = 20;
   BinopPrecedence['-'] = 20;
   BinopPrecedence['*'] = 40;
 
+  reader.pushsource(stdin);
+
   fprintf(stderr, "kaleidoscope interpreter\n");
   fprintf(stderr, "kld> ");
   getNextToken();
-
-  TheJIT = llvm::make_unique<KaleidoscopeJIT>();
-  InitializeModuleAndPassManager();
 
   MainLoop();
 

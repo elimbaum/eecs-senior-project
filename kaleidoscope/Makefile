@@ -7,3 +7,6 @@ FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
 
 %.ll: %.cpp
 	clang++ -g3 -S -emit-llvm $^ -o $@ $(FLAGS)
+
+clean:
+	rm core.* vgcore.*
