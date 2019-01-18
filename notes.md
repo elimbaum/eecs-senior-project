@@ -244,7 +244,21 @@ _ABI_BREAKING_CHECKS_ENFORCING=1` on compile fixes it. May need future fix if I 
 
 Fixed the prompt-printing bug. need to keep track of when we have completed an expression or not.
 
-Now I can't link chapter 4. Things being included, but not found by the linker? looks like it's a linking issue. linking all libraries and it seems to work.
+Now I can't link chapter 4. Things being included, but not found by the linker? looks like it's a linking issue. linking all libraries and it seems to work. But it's really slow. More cores?
+
+Function redefinition issue: I don't think i'm storing both. Prototype is being updated (# args), but not body. so new function is not being stored. or is not being found correctly? the storage process involves a lookup, i think. not sure. i should just continue. might fix itself later on in the tutorial.
+
+Build instructions in the tutorial are incomplete. Referring to cmakelists might work.
+
+Extern issue might be caused by master. Try reinstalling 7.0.1? Works on 6.0.1...
+
+Ok! Done with the Kaleidoscope tutorial. Now moving on to JIT
+
+### LLVM JIT Tutorial
+
+https://releases.llvm.org/6.0.1/docs/tutorial/BuildingAJIT1.html (need to use the appropriate version)
+
+
 
 ### LAPACK User Guide
 
