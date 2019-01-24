@@ -1,4 +1,5 @@
 # mandelbrot set generator
+import stdlib;
 
 # ascii gradient: [ .:-=+*#%@]
 def printdensity(d)
@@ -39,6 +40,6 @@ def mandelhelp(xmin xmax xstep  ymin ymax ystep)
     : putchard(10))
 
 # print mandel @ location with magnification
-def mandel(realstart imagstart realmag imagmag)
-  mandelhelp(realstart, realstart + realmag * 78, realmag,
-             imagstart, imagstart + imagmag * 30, imagmag);
+def mandel(realcent imagcent realmag imagmag)
+  mandelhelp(realcent - realmag * 78 * 0.5, realcent + realmag * 78 * 0.5, realmag,
+             imagcent - imagmag * 30 * 0.5, imagcent + imagmag * 30 * 0.5, imagmag);

@@ -1,0 +1,43 @@
+import stdlib;
+
+extern tan(x);
+extern sin(x);
+extern cos(x);
+
+def f(x y)
+  70 * (cos(y) + sin(x * y));
+
+def abs(x)
+  if x > 0 then
+    x
+  else
+    -x;
+
+def printdensity(d)
+  if d > 128 then
+    putchard(64) # @
+  else if d > 64 then
+    putchard(35) # #
+  else if d > 32 then
+    putchard(43) # +
+  else if d > 16 then
+    putchard(61) # =
+  else if d > 8 then
+    putchard(45) # -
+  else if d > 4 then
+    putchard(58) # :
+  else if d > 2 then
+    putchard(46) # .
+  else
+    putchard(32) # space
+  ;
+
+
+def graphhelp(xmin xmax xstep  ymin ymax ystep)
+  for y = ymin, y < ymax, ystep in
+  ((for x = xmin, x < xmax, xstep in
+      printdensity(abs(f(x, y)))) : putchard(10));
+
+def graph(xi yi xs ys)
+  graphhelp(xi, xi + xs * 80, xs,
+            yi, yi + ys * 30, ys);

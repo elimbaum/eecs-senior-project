@@ -5,7 +5,7 @@ def fib(x)
     if x < 3 then
         1
     else
-        fib(x-1)+fib(x-2);
+        fib(x-1) + fib(x-2);
 
 def fibi(x)
   if x < 3 then
@@ -18,4 +18,13 @@ def fibi(x)
       b = c) :
     b;
 
+def fiba(x)
+  if x < 3 then
+    1
+  else
+    var a = 1, b = 1 in
+    (for i = 3, i < x in
+      b = a + b :
+      a = b - a) : # a = old b
+    b;
 
