@@ -11,13 +11,17 @@
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
+#include "llvm/ExecutionEngine/Orc/IRTransformLayer.h"
 #include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Mangler.h"
 #include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -33,14 +37,24 @@ private:
   RTDyldObjectLinkingLayer ObjectLayer; // on-the-fly linking
   // IR -> obj compiling
   IRCompileLayer<decltype(ObjectLayer), SimpleCompiler> CompileLayer;
+  
+  using OptimizeFunction =
+      std::function<std::shared_ptr<Module>(std::shared_ptr<Module>)>;
+
+  // add optimization support
+  IRTransformLayer<decltype(CompileLayer), OptimizeFunction> OptimizeLayer;
 
 public:
-  using ModuleHandle = decltype(CompileLayer)::ModuleHandleT;
+  using ModuleHandle = decltype(OptimizeLayer)::ModuleHandleT;
 
   KaleidoscopeJIT()
       : TM(EngineBuilder().selectTarget()), DL(TM->createDataLayout()),
         ObjectLayer([]() { return std::make_shared<SectionMemoryManager>(); }),
-        CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
+        CompileLayer(ObjectLayer, SimpleCompiler(*TM)),
+        OptimizeLayer(CompileLayer,
+                      [this](std::shared_ptr<Module> M) {
+                        return optimizeModule(std::move(M));
+                      }) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
   }
 
@@ -51,7 +65,7 @@ public:
     auto Resolver = createLambdaResolver(
       // internal resolution rule
       [&](const std::string &Name) {
-        if (auto Sym = CompileLayer.findSymbol(Name, false))
+        if (auto Sym = OptimizeLayer.findSymbol(Name, false))
           return Sym;
         return JITSymbol(nullptr);
       },
@@ -64,14 +78,14 @@ public:
       });
 
     // Add to JIT
-    return cantFail(CompileLayer.addModule(std::move(M), std::move(Resolver)));
+    return cantFail(OptimizeLayer.addModule(std::move(M), std::move(Resolver)));
   }
 
   JITSymbol findSymbol(const std::string Name) {
     std::string MangledName;
     raw_string_ostream MangledNameStream(MangledName);
     Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
-    return CompileLayer.findSymbol(MangledNameStream.str(), true);
+    return OptimizeLayer.findSymbol(MangledNameStream.str(), true);
   }
 
   JITTargetAddress getSymbolAddress(const std::string Name) {
@@ -79,7 +93,26 @@ public:
   }
 
   void removeModule(ModuleHandle H) {
-    cantFail(CompileLayer.removeModule(H));
+    cantFail(OptimizeLayer.removeModule(H));
+  }
+
+private:
+  std::shared_ptr<Module> optimizeModule(std::shared_ptr<Module> M) {
+    // create FPM
+    auto FPM = llvm::make_unique<legacy::FunctionPassManager>(M.get());
+
+    // Add some optimizations
+    FPM->add(createInstructionCombiningPass());
+    FPM->add(createReassociatePass());
+    FPM->add(createGVNPass());
+    FPM->add(createCFGSimplificationPass());
+    FPM->doInitialization();
+
+    // run over all modules
+    for (auto &F : *M)
+      FPM->run(F);
+
+    return M;
   }
   
 };

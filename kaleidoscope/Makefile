@@ -2,8 +2,8 @@
 LIBS=core orcjit native
 FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
 
-%: %.cpp
-	clang++ -g3 -O0 $^ -o $@ $(FLAGS) -rdynamic
+%: %.cpp CustomJIT.h
+	clang++ -g3 -O0 $< -o $@ $(FLAGS) -rdynamic
 
 %.ll: %.cpp
 	clang++ -g3 -S -emit-llvm $^ -o $@ $(FLAGS)
