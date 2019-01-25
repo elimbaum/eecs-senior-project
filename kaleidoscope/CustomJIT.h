@@ -9,6 +9,7 @@
 #include "llvm/ExecutionEngine/JITSymbol.h"
 #include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
+#include "llvm/ExecutionEngine/Orc/CompileOnDemandLayer.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
 #include "llvm/ExecutionEngine/Orc/IRTransformLayer.h"
@@ -44,8 +45,11 @@ private:
   // add optimization support
   IRTransformLayer<decltype(CompileLayer), OptimizeFunction> OptimizeLayer;
 
+  std::unique_ptr<JITCompileCallbackManager> CompileCallbackManager;
+  CompileOnDemandLayer<decltype(OptimizeLayer)> CODLayer;
+
 public:
-  using ModuleHandle = decltype(OptimizeLayer)::ModuleHandleT;
+  using ModuleHandle = decltype(CODLayer)::ModuleHandleT;
 
   KaleidoscopeJIT()
       : TM(EngineBuilder().selectTarget()), DL(TM->createDataLayout()),
@@ -54,7 +58,14 @@ public:
         OptimizeLayer(CompileLayer,
                       [this](std::shared_ptr<Module> M) {
                         return optimizeModule(std::move(M));
-                      }) {
+                      }),
+        CompileCallbackManager(
+          orc::createLocalCompileCallbackManager(TM->getTargetTriple(), 0)),
+        CODLayer(OptimizeLayer,
+                  [](Function &F) { return std::set<Function*>({&F}); },
+                  *CompileCallbackManager,
+                  orc::createLocalIndirectStubsManagerBuilder(
+                    TM->getTargetTriple())) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
   }
 
@@ -65,7 +76,7 @@ public:
     auto Resolver = createLambdaResolver(
       // internal resolution rule
       [&](const std::string &Name) {
-        if (auto Sym = OptimizeLayer.findSymbol(Name, false))
+        if (auto Sym = CODLayer.findSymbol(Name, false))
           return Sym;
         return JITSymbol(nullptr);
       },
@@ -78,14 +89,14 @@ public:
       });
 
     // Add to JIT
-    return cantFail(OptimizeLayer.addModule(std::move(M), std::move(Resolver)));
+    return cantFail(CODLayer.addModule(std::move(M), std::move(Resolver)));
   }
 
   JITSymbol findSymbol(const std::string Name) {
     std::string MangledName;
     raw_string_ostream MangledNameStream(MangledName);
     Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
-    return OptimizeLayer.findSymbol(MangledNameStream.str(), true);
+    return CODLayer.findSymbol(MangledNameStream.str(), true);
   }
 
   JITTargetAddress getSymbolAddress(const std::string Name) {
@@ -93,7 +104,7 @@ public:
   }
 
   void removeModule(ModuleHandle H) {
-    cantFail(OptimizeLayer.removeModule(H));
+    cantFail(CODLayer.removeModule(H));
   }
 
 private:
