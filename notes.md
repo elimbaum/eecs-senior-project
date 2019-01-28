@@ -6,22 +6,16 @@ Advisor: Rajit Manohar
 
 ## TODO
 
-- [x] get set up on grace
-  - *really* get set up on grace
-- [x] github
-- [ ] RHEL VM? https://software.yale.edu/software/red-hat-enterprise-linux
-- [x] install LLVM
-- [x] reread DAISY
 - [ ] read FPGA paper?
-- [ ] read ADRES & other CGRA paper (dynamic translation!)
-- [x] read routing paper
+
+- [x] read ADRES & other CGRA paper (dynamic translation!)
+  - [ ] Look at ADRES sources
+- [x] ...including DRSEC
 - [ ] look into how shared objects work, esp wrt BLAS
-- [ ] object code translation
-- [ ] GNU BFD
-  - I don't know if this is feasible. We're not going to write a linker into the chip... and we don't want to require recompilation (or only partial compilation): this should be binary compatible.
-  - maybe it is. LLVM IR.
-- [ ] LZW for processor? replace based on usage, use code table to figure out common general operations
+  - [ ] might not be necessary with JIT – keep it simple – lookup by name.
 - [ ] profiling
+- [ ] read about LLVM backends/assembly generation
+- [ ] LLVM writeup
 - [ ] **look at Wiki Dynamic Translation bib!**
   - [ ] Dynamo
   - [ ] CGRA dynamic paper bib
@@ -31,9 +25,31 @@ Advisor: Rajit Manohar
 
 12 Sep: Prospectus Due
 
+XX Jan: Finish tutorial
+
+XX Jan: Implement JIT extension
+
+XX Feb: Implement Functional BLAS Block: CHP, ACT, sim
+
+XX Mar: Test programs, instrumentation
+
+XX Apr: Report, Poster
+
 ## Project Notes
 
+Amdahl's Law may limit the effectiveness of this project.
 
+Why is this different from ADRES? I should do some more research into this, but ADRES fundamentally is pre-compilation and thus limited by the same kind of issues that any JIT solves. I'm kind of moving ADRES into a JIT.
+
+JIT will take LLVM IR (/bitcode, really) and run it. JIT config will tell about current hardware capabilities available. This instruction should actually compile to this object code; these arguments correspond to these registers, return value. Only "software" that is not platform-specific is the configuration file. Not only does this not require rewriting compilers, but it doesn't even require recompiling code.
+
+I think, rather than creating a new JIT layer (though I could), I may just want to use the existing IRTransform layer. custom function: supplies module as argument, returns module.
+
+Precedence: if function is defined in current module, do not replace it. If external symbol, call it. Maybe could even add some kind of token to mark functions to never be replaced.
+
+I have to look into the code generation part, not the optimization part. In the example given, they show how the PowerPC backend knows to map LLVM `fadd` to PPC `FADDS` and LLVM `fadd fmul` to `FMADSS` (mul & add).
+
+Memory mapped IO should work.
 
 ## Meeting Notes
 
@@ -104,7 +120,7 @@ basic: count instructions, figure out how many could be saved by doing hardware 
 
 USE MORE CORES!
 
-Spend a week writing up how LLVM works. Just to think about it.
+**Spend a week writing up how LLVM works. Just to think about it.**
 
 Do the ACT file for a block.
 
@@ -113,6 +129,12 @@ Hardware unit tells JIT what units I have. JIT doesn't care.
 Easy solution: strict match to instruction. Harder: recognize more complex structures.
 
 emulate circuit on RISC. 
+
+### 28 Jan
+
+How to create CPU/FU interface? Probably can't create a custom instruction. Put it on a bus? How do peripheral busses work? Shared memory, with some kind of control signal? I'm only operating on the IR/ASM interface, so the output of my JIT needs to be standard assembly.
+
+
 
 
 ## Notes
@@ -155,9 +177,15 @@ Coarse-grained reconfigurable architecture (CGRA). Instead of configurable bit-l
 
 90/10 rule: 90% of time spent executing 10% of code... remaining 90% of the code can run of the regular processor just fine
 
-ADRES is effectively a coprocessor. transparent usage; many shared resources.
+ADRES is effectively a coprocessor. transparent usage; many shared resources. Important that *memory is shared here*... simplifies context switch.
 
-This requires a new compiler -- doesn't dynamically translate. There are many of these but this is not want I actually want to do.
+This requires a new compiler -- doesn't dynamically translate. There are many of these but this is not want I actually want to do. But paper emphasizes that having a good software toolchain is very important for architecture adoption. If no additional software toolchain is required, this is a boon for a new system!
+
+**DRSEC**: the compiler for ADRES. (separate paper)
+
+"we believe a major strength of coarse-grained reconfigurable architectures is in loop-level parallelism." or some other kind of parallelism. I will need to look into parallelism on my project.
+
+Added a special PHI instruction to the instruction set – which branch did program flow come from.
 
 ### Dynamic CGRA
 
@@ -252,13 +280,55 @@ Build instructions in the tutorial are incomplete. Referring to cmakelists might
 
 Extern issue might be caused by master. Try reinstalling 7.0.1? Works on 6.0.1...
 
-Ok! Done with the Kaleidoscope tutorial. Now moving on to JIT
+Ok! Done with the Kaleidoscope tutorial. Now moving on to JIT.
+
+Should look at: https://releases.llvm.org/6.0.1/docs/WritingAnLLVMPass.html to make a new pass!
 
 ### LLVM JIT Tutorial
 
 https://releases.llvm.org/6.0.1/docs/tutorial/BuildingAJIT1.html (need to use the appropriate version)
 
+Note about symbol resolvers:
 
+> It may seem as though modules added to the JIT should know about one another by default, but since we would still have to supply a symbol resolver for references to code outside the JIT it turns out to be easier to re-use this one mechanism for all symbol resolution.
+
+So even though it is not external, we treat it as such. Internal means *within the current module*, only.
+
+Adding optimization. Current implementation is eager-compiler. Lazy/eager tradeoff.
+
+Ok, so making a JIT is really straightforward. With not very much code at all I have a fully functional JIT.
+
+What I need to do now, probably, is to create a new ORC JIT layer. This layer will read the configuration data, and decide if a given function should be *looked up in the JIT, or called out.*
+
+### Writing an LLVM Pass
+
+https://releases.llvm.org/6.0.1/docs/WritingAnLLVMPass.html
+
+This is what I need to do! Ideally, I want a pass that, for certain library functions, emits code for the internal FU, instead of actually calling that function.
+
+Need to make a shared object...
+
+.ll is LLVM IR, .bc is LLVM bitcode. only generation difference is if `-S` or `-c` is used when compiling.
+
+I probably want a `FunctionPass`. Not sure how that will work with the call... is it called before/during/after? Doesn't matter either way – runs on all functions. or `BasicBlockPass`. This just depends on where exactly the pass is called. I don't think I want `MachineFunctionPass` because by that point it may be too late. Side note: maybe I don't want to be looking at optimization passes, but at code generation... https://www.llvm.org/docs/CodeGenerator.html:
+
+![image-20190127231319973](/Users/elibaum/Documents/senior project/etc/codegen-screenshot.png)
+
+This is exactly what I want!
+
+### LLVM Codegen
+
+https://www.llvm.org/docs/CodeGenerator.html or https://releases.llvm.org/6.0.1/docs/CodeGenerator.html
+
+Ok, I think I've finally found it. What I really want is just a complicated version of the pattern above, along with some complex code generation to allow arbitrary interface... memory mapped IO?
+
+`MachineBuilderInstr`: create a custom instruction. can have arbitrary pattern matching – pass to function, rather than specifying simple pattern rules. or... `TargetInstructionInfo`. That's where all the instructions are actually picked up.
+
+Finally, I would need to get in the way of the function call. So maybe actually it would be a combination of Codegen and optimization pass? Next step, I think is actually to figure out *where the linking of external objects happens*, and intercept that.
+
+How to do with mutual inclusion? If optimized library function is also called within the library, JIT needs to somehow handle that library... problem as mentioned above. Would be good to intercept these calls as well.
+
+If necessary, could allow override of matching functions – with a keyword or something.
 
 ### LAPACK User Guide
 
