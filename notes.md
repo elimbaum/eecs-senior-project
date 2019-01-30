@@ -134,7 +134,27 @@ emulate circuit on RISC.
 
 How to create CPU/FU interface? Probably can't create a custom instruction. Put it on a bus? How do peripheral busses work? Shared memory, with some kind of control signal? I'm only operating on the IR/ASM interface, so the output of my JIT needs to be standard assembly.
 
+out of order RISCV implementation: BOOM.
 
+Rui is working on RISC JIT: codegen for FPGA. backend works on LLVM, but JIT not implemented on RISCV. something with runtime linking.
+
+I could use ARM, RISC might be tricky.
+
+simulation, or FPGA (but FPGA requires RISC). so probably simulation, for now, unless someone fixes. **Gem 5** simulator, ARM. can't do async, so might have to fudge async. actually simulating async might be a big endeavor.
+
+trampoline code: jump to jump
+
+Step 1: get GEM5 running LLVM code. **cross-compilation**. (slow! checkpoint.)
+
+Step 2: running my JIT on GEM5.
+
+Step 3: add hardware feature (how to modify Gem?)
+
+memory mapped IO. coordinate with Rui on what memory system should look like.
+
+write in CHP, data flow simulator, add to simulator.
+
+implement integer operation. start at the bottom (simple stuff, vectors).
 
 
 ## Notes
