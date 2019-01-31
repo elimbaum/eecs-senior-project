@@ -840,8 +840,6 @@ Value * ImportExprAST::codegen() {
     }
 
     reader.pushsource(f);
-    // MainLoop(); // TODO: disable prompt
-    // reader.revertsource();
   }
 
   // Don't actually generate any IR
