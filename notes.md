@@ -4,36 +4,40 @@
 
 Advisor: Rajit Manohar
 
-## TODO
+## General TODO
 
 - [ ] read FPGA paper?
-
 - [x] read ADRES & other CGRA paper (dynamic translation!)
   - [ ] Look at ADRES sources
 - [x] ...including DRSEC
 - [ ] look into how shared objects work, esp wrt BLAS
-  - [ ] might not be necessary with JIT – keep it simple – lookup by name.
+  - [x] might not be necessary with JIT – keep it simple – lookup by name.
 - [ ] profiling
 - [ ] read about LLVM backends/assembly generation
-- [ ] LLVM writeup
+- [ ] LLVM writeup **don’t forget about this!**
 - [ ] **look at Wiki Dynamic Translation bib!**
   - [ ] Dynamo
   - [ ] CGRA dynamic paper bib
 - [ ] MorphoSys/TinyRISC: http://gram.eng.uci.edu/morphosys/
 
+## Project TODO
+
+- [ ] LLVM write up
+
+- [ ] RISC in gem5
+
+- [ ] LLVM on RISC
+
+- [ ] JIT
+
+- [ ] add hardware feature
+
+
 ## Important Dates
 
 12 Sep: Prospectus Due
 
-XX Jan: Finish tutorial
 
-XX Jan: Implement JIT extension
-
-XX Feb: Implement Functional BLAS Block: CHP, ACT, sim
-
-XX Mar: Test programs, instrumentation
-
-XX Apr: Report, Poster
 
 ## Project Notes
 
@@ -50,6 +54,77 @@ Precedence: if function is defined in current module, do not replace it. If exte
 I have to look into the code generation part, not the optimization part. In the example given, they show how the PowerPC backend knows to map LLVM `fadd` to PPC `FADDS` and LLVM `fadd fmul` to `FMADSS` (mul & add).
 
 Memory mapped IO should work.
+
+Rajit mentioned that we should build up: start with simpler functions, etc. But, at least looking at BLAS source, it doesn't seem like there's necessarily a lot of hierarchy. Sure, function calls are expensive, so it may not be that obvious. Perhaps vector addition & dot product engines would be good.
+
+For example, SAXPY is constant * vector + vector. SDOT is vector • vector.
+
+(also, I'm only going to be doing real integers)
+
+ok, now that i’ve learned about gem5, it looks like:
+
+- implement JIT that can recognize certain function calls (either literally or semantically)
+- for those instructions, JIT emits memory mapped IO (write/interrupt/read?)
+- modify gem5 CPU to include FU at that memory mapped IO location, possible interrupt
+
+Seems like the CPU doesn’t actually to be modified much. Really what I need to do is hookup a peripheral… found someone’s thesis from 2012. will read. not sure how updated. (vs. current state of gem5)
+
+The memory-mapped IO is something in the full-system config file. So it will be something like the previous port connections, need to tell the memory to forward certain ranges to the FU. Rui has figured out the MMIO, at least on the O3 cpu. does it matter? of course O3 will be more efficient, but is that going to have a bearing on my results?
+
+## FU Notes
+
+Creating the FU. How many functions to do? Look at a couple:
+
+* SSCAL: x=a\*x. scalar times vector.
+* SNRM2: euclidean norm. sqrt dot product. (vector times vector)
+* SDOT: dot product. vector times vector.
+* SAXPY: y=a\*x+y. scalar times vector plus vector.
+
+so the operations needed are:
+
+- scalar times vector: parallel
+- dot product: partially parallel
+- vector addition: parallel
+
+vector size: make these support X bytes, also send length? probably easier than special end-of-vector value, especially if i’m doing integers. anyway, this is how BLAS does it. might make interface easier. direct-copy memory.
+
+lots of this can be parallelized, but depends how many multipliers & adders i want. could have single full adder/multiplier with multiplexer. even having two of each could be cool though. then even dot product can take advantage of it for the summation part, at least partially.
+
+With ACT/CHP templates, can easily do N-bit M-wide vectors, so don’t have to worry about bitwidths too much (as far as design goes), only matters when physically sizing out the chip.
+
+I can pull these from other sources. get a reasonably efficient multiplier/adder. Can also try parallel/nonparallel compare result.
+
+From talking to zeb, doing with a single ALU will get tricky. his compiler just puts in a new adder for each expression. no CSE, not even any reuse. that’s tricky. however, in a loop, might not be terrible. We didn’t have arrays, though… or maybe we could.
+
+templated adder
+
+but can’t do templated adder - adder.
+
+basic sketch:
+
+```
+// dot product ACT
+// this will construct 2 log
+
+template<pint B, pint N>
+defproc sdot(aN1of2<B> x[N]; aN1of2<B> y[N]; dualrail out[B])
+{
+	// TODO this was originally N > 3. Can it actually handle 2 & 3?
+	[ N > 1 ->
+		dualrail outL[B], outR[B];
+		sdot<B, N/2>   L(x[0..N/2-1], y[0..N/2-1], outL);
+		sdot<B, N-N/2> R(x[N/2..N-1], y[N/2..N-1], outR);
+		out = outL + outR;
+	[] else ->
+		// N = 1. just adding
+		out := x[0] * y[0];
+	]
+}
+```
+
+
+
+
 
 ## Meeting Notes
 
@@ -122,7 +197,7 @@ USE MORE CORES!
 
 **Spend a week writing up how LLVM works. Just to think about it.**
 
-Do the ACT file for a block.
+**Do the ACT file for a block.**
 
 Hardware unit tells JIT what units I have. JIT doesn't care.
 
@@ -157,7 +232,7 @@ write in CHP, data flow simulator, add to simulator.
 implement integer operation. start at the bottom (simple stuff, vectors).
 
 
-## Notes
+## Reading Notes
 
 ### Benes Nowick Wolfe: Huffman
 
@@ -383,3 +458,44 @@ Now looking to install BLAS.
 Updated `interactive` to request 7-day idle timeout. LLVM is now using a TON of memory to build??
 
 I don't really want to do VNC.
+
+Trouble launching interactive sessions: because maintenance falls within my default 7-day allocation.
+
+### gem5
+
+I will use gem5 to simulate an ARM CPU.
+
+http://learning.gem5.org/book/intro.html
+
+Need to recompile for different architectures! Going to follow the tutorial, which does x86. But later will need to do RISC.
+
+Weird build fail. Probably ran out of memory. Trying again not with full parallelization... (4 cores vs 14) Slow to install, but I have time. build success! took 30 minutes or so. maybe longer, wasn't keeping track. in the future, i should slurm building.
+
+full system vs sys call: emulate the entire hardware system, or just a quasi-VM. SE much faster, does not require all hardware devices to be created. not sure which i'll need.
+
+It works!
+
+Adding a new object. Needs to be included in the actual source tree so it can be recompiled. Existing tutorial example removed by renaming `SConscript`.
+
+call modes: atomic (fast forward?), functional (loading memory contents), timing (normal simulation)
+
+writing cache. cache works! faster (small cache, 57M ticks; big cache, 33M ticks) and better hit ratio (91% vs 96%).
+
+trying full system emulation. and we’re booting! not too tricky. but binaries and disks have to be in the gem5 root; all other files can be in configs/…
+
+That part of `x86.py` that looks like a typo isn’t, it is supposed to be a local function.
+
+Everything works! wow. & done with the Gem5 tutorial.
+
+Next I should figure out how gem5 is executing instructions. looks like for the AtomicSimpleCPU, that code is in src/cpu/simple/atomic.cc and base.cc
+
+There’s a preExecute() and postExecute(), and then StaticInstPtr::execute. can’t find where that’s defined. minor/execute.cc? That looks promising. execute part of the fetch/decode/execute cycle
+
+Part 4 PPT has some good information.
+
+Timing CPU much slower than atomic (actually simulates memory/CPU timings)
+
+### RISC - gem5 thesis
+
+https://cfaed.tu-dresden.de/files/Images/people/chair-cc/theses/1808_Scheffel.pdf
+
