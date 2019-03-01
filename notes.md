@@ -24,24 +24,30 @@ Advisor: Rajit Manohar
 
 - [ ] LLVM write up
 
-- [ ] RISC in gem5
+- [ ] ARM in gem5
 
-- [ ] LLVM on RISC
+- [ ] LLVM cross compile to ARM
 
 - [ ] JIT
 
-- [ ] add hardware feature
+- [ ] add hardware feature in gem5
 
 
 ## Important Dates
 
 12 Sep: Prospectus Due
 
-
+Reading period: presentation
 
 ## Project Notes
 
 Amdahl's Law may limit the effectiveness of this project.
+
+$S = \frac{1}{(1-p) + \frac{p}{s}}$
+
+where $S$ is overall speedup, $p$ is proportion of time in critical section, and $s​$ is specific speedup.
+
+So if some component is run 1/2 time, and I speed it up 2x, that’s a 33% speedup. Not horrible.
 
 Why is this different from ADRES? I should do some more research into this, but ADRES fundamentally is pre-compilation and thus limited by the same kind of issues that any JIT solves. I'm kind of moving ADRES into a JIT.
 
@@ -70,6 +76,14 @@ ok, now that i’ve learned about gem5, it looks like:
 Seems like the CPU doesn’t actually to be modified much. Really what I need to do is hookup a peripheral… found someone’s thesis from 2012. will read. not sure how updated. (vs. current state of gem5)
 
 The memory-mapped IO is something in the full-system config file. So it will be something like the previous port connections, need to tell the memory to forward certain ranges to the FU. Rui has figured out the MMIO, at least on the O3 cpu. does it matter? of course O3 will be more efficient, but is that going to have a bearing on my results?
+
+gem5 has limited RISC-V support (no full system)
+
+hey! scons is silly. not actual folder structure. `scons build/RISCV/gem5.opt` compilation issue with template function includes? Trying to install with a fresh pull from git.
+
+systemC _is_ required, have to load GCC 7.3.0. ohhh in meeting we said RISC might be tricky. my bad. so maybe i’ll try it all again with ARM.
+
+It seems like everything is loaded correctly. I don’t know why it’s not working. Trying in local lubuntu VM. Looks like zoo works, however. Local lubuntu also works.
 
 ## FU Notes
 
@@ -104,27 +118,64 @@ basic sketch:
 
 ```
 // dot product ACT
-// this will construct 2 log
+// this will construct N multipliers and N-1 adders, all of bitwidth B
 
 template<pint B, pint N>
-defproc sdot(aN1of2<B> x[N]; aN1of2<B> y[N]; dualrail out[B])
+defproc sdot(aN1of2<B> x[N]; aN1of2<B> y[N]; aN1of2 out[B])
 {
 	// TODO this was originally N > 3. Can it actually handle 2 & 3?
 	[ N > 1 ->
-		dualrail outL[B], outR[B];
+		aN1of2 outL[B], outR[B];
 		sdot<B, N/2>   L(x[0..N/2-1], y[0..N/2-1], outL);
 		sdot<B, N-N/2> R(x[N/2..N-1], y[N/2..N-1], outR);
-		out = outL + outR;
+		int_add<B>(outL, outR, out);
 	[] else ->
-		// N = 1. just adding
-		out := x[0] * y[0];
+		// N = 1. just component-wise product, to be added
+		int_mul<B>(x[0], y[0], out);
 	]
 }
 ```
 
+What about the others? Scalar-vector mult and vector add. I think more straightforward:
 
+```
+template<pint B, pint N>
+defproc sscal(aN1of2<B> a; aN1of2<B> x[N]; aN1of2<B> out[N])
+{
+	(i:N: int_mul<B>(a, x[i], out[i]); )
+}
 
+template<pint B, pint N>
+defproc vector_add(aN1of2<B> x[N]; aN1of2<B> y[N]; aN1of2<B> out[N])
+{
+	(i:N: int_add<B>(x[i], y[i], out[i]); )
+}
 
+template<pint B, pint N>
+defproc snrm2(aN1of2<B> x[N]; aN1of2 out[B])
+{
+	dualrail outSq[B];
+	sdot<B, N>(x, x, outSq);
+	sqrt<B>(outSq, out); // TODO
+}
+```
+
+Much more straightforward. So then saxpy is just sscal and vector add:
+
+```
+template<pint B, pint N>
+defproc saxpy(aN1of2<B> a; aN1of2<B> x[N]; aN1of2<B> y[N];
+			  aN1of2<B> out[N])
+{
+	aN1of2<B> ax[N];
+	sscal<B, N>(a, x, ax);
+	vector_add<B, N>(ax, y, out);
+}
+```
+
+neat.
+
+(now just have to figure out the B-width operators themselves…) and also sqrt.
 
 ## Meeting Notes
 
@@ -230,6 +281,40 @@ memory mapped IO. coordinate with Rui on what memory system should look like.
 write in CHP, data flow simulator, add to simulator.
 
 implement integer operation. start at the bottom (simple stuff, vectors).
+
+### 28 Feb
+
+**Questions**
+
+- Is my sketch an appropriate use of templates?
+  - Single ALU/operator blocks for N-wide vectors, or multiple? Much more complicated storage scheme required
+  - make operators (sort/+/*) templated bundled data?
+- Why RISCV over [Alpha or ARM](http://gem5.org/Supported_Architectures)?
+  - No, I’m doing ARM silly
+- Check TODO
+
+ask Rui about ARM. also has MMIO working.
+
+Dot products COULD be bigger than the circuit.
+
+ACT is describing FIXED hardware. JIT knows about new functionality, and what it is being asked of it. could have different sized CHIPS, but not software-dependent.
+
+MAC unit! (multiply accumulate)
+
+hardware sqrt is cheap (in float). don’t worry about arithmetic @ moment.
+
+memory bandwidth limits that! probably should MMIO pass pointer (shared memory). however, this CAN be faster, because load/store is operating on single words. But we could operate on whole cache line. MMIO can also send commands – which operation, pointers to arguments, and length.
+
+LINALU should have its own cache.
+
+2-way set associative, for each arguments. also: hardware stream prefetcher. looks at cache misses, and if it realizes a sequence, prefetch rest of the array (maybe).
+
+a*x + y
+
+don’t worry about ACT. do it all in GEM5.
+
+Cache usually gives you a single word – look into giving up a whole line. this is technologically feasible but not the usual method.
+
 
 
 ## Reading Notes
@@ -463,7 +548,7 @@ Trouble launching interactive sessions: because maintenance falls within my defa
 
 ### gem5
 
-I will use gem5 to simulate an ARM CPU.
+I will use gem5 to simulate an ARM CPU. (wait, ARM? - 27 Feb)
 
 http://learning.gem5.org/book/intro.html
 
@@ -498,4 +583,12 @@ Timing CPU much slower than atomic (actually simulates memory/CPU timings)
 ### RISC - gem5 thesis
 
 https://cfaed.tu-dresden.de/files/Images/people/chair-cc/theses/1808_Scheffel.pdf
+
+WRONG ARCH lol
+
+### arm gem5 starter kit
+
+it’s working! SE + FS. For FS, have to specify kernel NAME. It knows where to look, I guess based on M5_PATH variable.
+
+minor CPU model not working. simulation just ends during boot. and with multiple cores, hands. AtomicSimple might? looking good… ~10 min boot. yay!
 
