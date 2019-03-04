@@ -23,13 +23,10 @@ Advisor: Rajit Manohar
 ## Project TODO
 
 - [ ] LLVM write up
-
 - [ ] ARM in gem5
-
 - [ ] LLVM cross compile to ARM
-
 - [ ] JIT
-
+- [ ] BLAS
 - [ ] add hardware feature in gem5
 
 
@@ -83,7 +80,30 @@ hey! scons is silly. not actual folder structure. `scons build/RISCV/gem5.opt` c
 
 systemC _is_ required, have to load GCC 7.3.0. ohhh in meeting we said RISC might be tricky. my bad. so maybe i’ll try it all again with ARM.
 
-It seems like everything is loaded correctly. I don’t know why it’s not working. Trying in local lubuntu VM. Looks like zoo works, however. Local lubuntu also works.
+It seems like everything is loaded correctly. I don’t know why it’s not working. Trying in local lubuntu VM. Looks like zoo works, however. Local lubuntu also works. **Moving to zoo**
+
+Guess that means I need to reinstall LLVM locally on zoo. lol. git & configs moved over.
+
+### Installing LLVM on Zoo
+
+- Install LLVM on zoo
+- Set up LLVM cross-compilation
+- Cross compile test program
+- Run in gem5
+
+`cmake -G "Ninja" -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_INSTALL_PREFIX=~/sproj/llvm ../llvm`
+
+`cmake --build .`  (automatically calls Ninja for parallel build) linking is still slow.
+
+`cmake --build . --target install`  to move everything into place
+
+shoot, gotta install clang as well… ENABLE PROJECTS.
+
+it works! kaleidoscope, etc.
+
+### Cross Compiling
+
+Using the `arm-linux-gnueabihf` tools, I can cross compile (just have to remember to `-static` because simulated system doesn’t have the libraries included). However, can’t figure out how to do that with LLVM. Rui will send me config tmrw.
 
 ## FU Notes
 
@@ -592,3 +612,20 @@ it’s working! SE + FS. For FS, have to specify kernel NAME. It knows where to 
 
 minor CPU model not working. simulation just ends during boot. and with multiple cores, hands. AtomicSimple might? looking good… ~10 min boot. yay!
 
+atomic is the fastest! instantaneous memory access. good for fast-forwarding. **NOTE:** different CPU models can be used for different parts of a simulation thanks to checkpoint. So can boot atomic, then run programs in minor. MinorCPU is a much more realistic simulation, so it’s incredibly slow. Pipelined. TimingSimpleCPU models memory access but is still in-order.
+
+> The Execute stage includes the Functional Units (FU), which model the computational core of the CPU. By configuring the executeFuncUnits, as shown in Table 3, we can define functional units associated with our core. Each functional unit models a number of instruction classes, the delay between instruction issues, and the delay from instruction issue to commit [15]. Since Execute utilizes a Load Store Queue (LSQ) for memory reference instructions, there are some parameters that configure LSQ, as shown in Table 1.
+
+This is interesting! I may not be working with a single instruction, but at least if the JIT can model these operations as a MMIO load/store, the FU could just write to MMIO & wait for done flag?
+
+Think about interrupts. They might be useful for getting the result of computations. `src/arch/ARM/interrupts.hh`
+
+FP register file… can be used for intermediate results, probably. Separate L1 Caches (Inst/Data), integrated L2 Cache. The HPI data cache includes a prefetcher which watches for access patterns.
+
+HPI works! But is slow, esp for FS. don’t boot. Very slow. Upwards of 1 hr.
+
+have to install gcc cross compiler. maybe just do LLVM if it doesn’t work, but trying to do local install. (can’t yum/apt-get on zoo) That was a little sketch – I don’t know if anything else needs to be installed or configured – but everything compiled fine!
+
+benchmarks use ROI markers (region of interest). also reset m5 stats.
+
+PARSEC instructions are out of date and confusing. Going to skip it. However, there is an interesting point about moving files onto the disk image. I think next step is to get cross-compile working.
