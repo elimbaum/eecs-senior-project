@@ -1,5 +1,5 @@
-// #include "KaleidoscopeJIT.h"
-#include "CustomJIT.h"
+#include "KaleidoscopeJIT.h"
+// #include "CustomJIT.h"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -1100,7 +1100,7 @@ void InitializeModuleAndPassManager(void) {
   
   // Create pass manager
   TheFPM = llvm::make_unique<legacy::FunctionPassManager>(TheModule.get());
-  TheFPM->add(createPromoteMemoryToRegisterPass()); // mem2reg
+  // TheFPM->add(createPromoteMemoryToRegisterPass()); // mem2reg
   TheFPM->add(createInstructionCombiningPass());
   TheFPM->add(createReassociatePass());
   TheFPM->add(createGVNPass()); // common subexpr
