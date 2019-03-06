@@ -922,6 +922,10 @@ Value * CallExprAST::codegen() {
       return nullptr;
   }
 
+  if (Callee == "foo") {
+    fprintf(stderr, "special function called!\n");
+  }
+
   return Builder.CreateCall(CalleeF, ArgsV, "calltmp");
 }
 
