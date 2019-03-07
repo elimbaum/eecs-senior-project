@@ -11,7 +11,7 @@ FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
 	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -rdynamic
 
 %-static: %.cpp KaleidoscopeJIT.h
-	clang++ -v -g3 -O0 -static $< -o $@ $(FLAGS) -rdynamic -Xlinker --verbose \
+	g++ -v -g3 -O0 -static $< -o $@ $(FLAGS) -Xlinker --verbose -L. -l:lkld.a \
 	  -L/home/accts/emb99/sproj/lib \
 	  -L/usr/lib/debug/usr/lib64 \
 	  -L/usr/lib/x86_64-linux-gnu \
