@@ -6,7 +6,7 @@ ARM_TRIP=arm-linux-gnueabihf
 SYSROOT=${HOME}/sproj/gcc-${ARM_TRIP}/${ARM_TRIP}
 
 %: %.cpp
-	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -rdynamic
+	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -static
 
 %-arm: %.cpp
 	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -rdynamic --target=${ARM_TRIP} \

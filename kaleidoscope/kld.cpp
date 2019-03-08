@@ -89,6 +89,8 @@ public:
 
 Reader reader;
 
+bool DoReplacement;
+
 static std::string IdentifierStr;
 static double NumVal;
 
@@ -906,6 +908,8 @@ Value * BinaryExprAST::codegen() {
   return Builder.CreateCall(F, Ops, "binop");
 }
 
+void InitializeModuleAndPassManager();
+
 Value * CallExprAST::codegen() {
   Function * CalleeF = getFunction(Callee);
   if (!CalleeF)
@@ -920,10 +924,6 @@ Value * CallExprAST::codegen() {
     ArgsV.push_back(Args[i]->codegen());
     if (!ArgsV.back())
       return nullptr;
-  }
-
-  if (Callee == "foo") {
-    fprintf(stderr, "special function called!\n");
   }
 
   return Builder.CreateCall(CalleeF, ArgsV, "calltmp");
@@ -1221,7 +1221,7 @@ extern "C" DLLEXPORT double printd(double X) {
   return 0;
 }
 
-int main() {
+int main(int argc, char ** argv) {
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
   InitializeNativeTargetAsmParser();
@@ -1238,6 +1238,12 @@ int main() {
   reader.pushsource(stdin);
 
   fprintf(stderr, "kaleidoscope interpreter\n");
+
+  if (argc > 1 && !strcmp(argv[1], "r")) {
+    fprintf(stderr, "Running with FU replacements!\n");
+    DoReplacement = true;
+  }
+
   fprintf(stderr, "kld> ");
   getNextToken();
 

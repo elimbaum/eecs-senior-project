@@ -33,7 +33,12 @@ def binary& 6 (LHS RHS)
   else
     !!RHS;
 
-def binary_ 9 (LHS RHS) # equal sign is used by variables
+def binary? 9 (LHS RHS) # equal sign is used by variables
   !(LHS < RHS | LHS > RHS);
 
+### initial testing for project
+extern sqrt(x);
+
+def hyp(a b)
+  sqrt(a * a + b * b);
 

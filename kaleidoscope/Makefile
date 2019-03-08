@@ -6,17 +6,13 @@ FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
 # ARM_TRIP=aarch64-linux-gnu
 # SYSROOT=${HOME}/sproj/fresh-arm/gcc-${ARM_TRIP}/${ARM_TRIP}
 # LDFLAGS=-static-libstdc++
+VERBOSE=
 
 %: %.cpp KaleidoscopeJIT.h
-	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -rdynamic
+	clang++ $(VERBOSE) -g3 -O0 $< -o $@ $(FLAGS) -rdynamic
 
 %-static: %.cpp KaleidoscopeJIT.h
-	g++ -v -g3 -O0 -static $< -o $@ $(FLAGS) -Xlinker --verbose -L. -l:lkld.a \
-	  -L/home/accts/emb99/sproj/lib \
-	  -L/usr/lib/debug/usr/lib64 \
-	  -L/usr/lib/x86_64-linux-gnu \
-	  -L/usr/local/anaconda/lib \
-	  -L/usr/lib64/gcc/x86_64-redhat-linux/7.3.1
+	g++ $(VERBOSE) -g3 -O0 -static $< -o $@ $(FLAGS) -Xlinker --verbose 
 
 %-arm: %.cpp KaleidoscopeJIT.h
 	${SYSROOT}/../bin/${ARM_TRIP}-g++ \
