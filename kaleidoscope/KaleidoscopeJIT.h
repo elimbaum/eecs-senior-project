@@ -33,6 +33,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cstdio>
 
 namespace llvm {
 namespace orc {

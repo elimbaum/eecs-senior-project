@@ -1,0 +1,1111 @@
+clang++ -v -Xlinker --verbose -g3 -O0 kld.cpp libkld.o -o kld `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native ` -rdynamic
+clang version 9.0.0 (https://github.com/llvm/llvm-project.git d0156256e2c22f8d7768400375ae6e3d3f1bf5e1)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /home/eli/llvm/bin
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/5
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/5.4.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/6
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/6.0.0
+Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/5.4.0
+Candidate multilib: .;@m64
+Selected multilib: .;@m64
+ "/home/eli/llvm/bin/clang-9" -cc1 -triple x86_64-unknown-linux-gnu -emit-obj -mrelax-all -disable-free -disable-llvm-verifier -discard-value-names -main-file-name kld.cpp -mrelocation-model static -mthread-model posix -mdisable-fp-elim -fmath-errno -masm-verbose -mconstructor-aliases -munwind-tables -fuse-init-array -target-cpu x86-64 -dwarf-column-info -debug-info-kind=limited -dwarf-version=4 -debugger-tuning=gdb -v -resource-dir /home/eli/llvm/lib/clang/9.0.0 -I /home/eli/llvm/include -D _GNU_SOURCE -D __STDC_CONSTANT_MACROS -D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/x86_64-linux-gnu/c++/5.4.0 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/x86_64-linux-gnu/c++/5.4.0 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0/backward -internal-isystem /usr/local/include -internal-isystem /home/eli/llvm/lib/clang/9.0.0/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -O0 -std=c++11 -fdeprecated-macro -fdebug-compilation-dir /home/eli/sproj-git/kaleidoscope -ferror-limit 19 -fmessage-length 0 -fno-rtti -fobjc-runtime=gcc -fdiagnostics-show-option -o /tmp/kld-410072.o -x c++ kld.cpp -faddrsig
+clang -cc1 version 9.0.0 based upon LLVM 9.0.0svn default target x86_64-unknown-linux-gnu
+ignoring nonexistent directory "/include"
+ignoring duplicate directory "/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/x86_64-linux-gnu/c++/5.4.0"
+#include "..." search starts here:
+#include <...> search starts here:
+ /home/eli/llvm/include
+ /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0
+ /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/x86_64-linux-gnu/c++/5.4.0
+ /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0/backward
+ /usr/local/include
+ /home/eli/llvm/lib/clang/9.0.0/include
+ /usr/include/x86_64-linux-gnu
+ /usr/include
+End of search list.
+ "/usr/bin/ld" -export-dynamic -z relro --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o kld /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5.4.0/crtbegin.o -L/home/eli/llvm/lib -L/usr/lib/gcc/x86_64-linux-gnu/5.4.0 -L/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/usr/lib/x86_64-linux-gnu/../../lib64 -L/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../.. -L/home/eli/llvm/bin/../lib -L/lib -L/usr/lib --verbose /tmp/kld-410072.o libkld.o -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMGlobalISel -lLLVMSelectionDAG -lLLVMAsmPrinter -lLLVMCodeGen -lLLVMScalarOpts -lLLVMInstCombine -lLLVMAggressiveInstCombine -lLLVMBitWriter -lLLVMX86Desc -lLLVMMCDisassembler -lLLVMX86Info -lLLVMX86AsmPrinter -lLLVMX86Utils -lLLVMOrcJIT -lLLVMTransformUtils -lLLVMExecutionEngine -lLLVMTarget -lLLVMAnalysis -lLLVMProfileData -lLLVMRuntimeDyld -lLLVMObject -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMDebugInfoMSF -lLLVMCore -lLLVMBinaryFormat -lLLVMSupport -lLLVMDemangle -lz -lrt -ldl -ltinfo -lpthread -lm -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5.4.0/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crtn.o
+GNU ld (GNU Binutils for Ubuntu) 2.26.1
+  Supported emulations:
+   elf_x86_64
+   elf32_x86_64
+   elf_i386
+   elf_iamcu
+   i386linux
+   elf_l1om
+   elf_k1om
+   i386pep
+   i386pe
+using internal linker script:
+==================================================
+/* Script for -z combreloc: combine and sort reloc sections */
+/* Copyright (C) 2014-2015 Free Software Foundation, Inc.
+   Copying and distribution of this script, with or without modification,
+   are permitted in any medium without royalty provided the copyright
+   notice and this notice are preserved.  */
+OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64",
+	      "elf64-x86-64")
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(_start)
+SEARCH_DIR("=/usr/local/lib/x86_64-linux-gnu"); SEARCH_DIR("=/lib/x86_64-linux-gnu"); SEARCH_DIR("=/usr/lib/x86_64-linux-gnu"); SEARCH_DIR("=/usr/local/lib64"); SEARCH_DIR("=/lib64"); SEARCH_DIR("=/usr/lib64"); SEARCH_DIR("=/usr/local/lib"); SEARCH_DIR("=/lib"); SEARCH_DIR("=/usr/lib"); SEARCH_DIR("=/usr/x86_64-linux-gnu/lib64"); SEARCH_DIR("=/usr/x86_64-linux-gnu/lib");
+SECTIONS
+{
+  /* Read-only sections, merged into text segment: */
+  PROVIDE (__executable_start = SEGMENT_START("text-segment", 0x400000)); . = SEGMENT_START("text-segment", 0x400000) + SIZEOF_HEADERS;
+  .interp         : { *(.interp) }
+  .note.gnu.build-id : { *(.note.gnu.build-id) }
+  .hash           : { *(.hash) }
+  .gnu.hash       : { *(.gnu.hash) }
+  .dynsym         : { *(.dynsym) }
+  .dynstr         : { *(.dynstr) }
+  .gnu.version    : { *(.gnu.version) }
+  .gnu.version_d  : { *(.gnu.version_d) }
+  .gnu.version_r  : { *(.gnu.version_r) }
+  .rela.dyn       :
+    {
+      *(.rela.init)
+      *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*)
+      *(.rela.fini)
+      *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*)
+      *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*)
+      *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*)
+      *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*)
+      *(.rela.ctors)
+      *(.rela.dtors)
+      *(.rela.got)
+      *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*)
+      *(.rela.ldata .rela.ldata.* .rela.gnu.linkonce.l.*)
+      *(.rela.lbss .rela.lbss.* .rela.gnu.linkonce.lb.*)
+      *(.rela.lrodata .rela.lrodata.* .rela.gnu.linkonce.lr.*)
+      *(.rela.ifunc)
+    }
+  .rela.plt       :
+    {
+      *(.rela.plt)
+      PROVIDE_HIDDEN (__rela_iplt_start = .);
+      *(.rela.iplt)
+      PROVIDE_HIDDEN (__rela_iplt_end = .);
+    }
+  .init           :
+  {
+    KEEP (*(SORT_NONE(.init)))
+  }
+  .plt            : { *(.plt) *(.iplt) }
+.plt.got        : { *(.plt.got) }
+.plt.bnd        : { *(.plt.bnd) }
+  .text           :
+  {
+    *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+    *(.text.exit .text.exit.*)
+    *(.text.startup .text.startup.*)
+    *(.text.hot .text.hot.*)
+    *(.text .stub .text.* .gnu.linkonce.t.*)
+    /* .gnu.warning sections are handled specially by elf32.em.  */
+    *(.gnu.warning)
+  }
+  .fini           :
+  {
+    KEEP (*(SORT_NONE(.fini)))
+  }
+  PROVIDE (__etext = .);
+  PROVIDE (_etext = .);
+  PROVIDE (etext = .);
+  .rodata         : { *(.rodata .rodata.* .gnu.linkonce.r.*) }
+  .rodata1        : { *(.rodata1) }
+  .eh_frame_hdr : { *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*) }
+  .eh_frame       : ONLY_IF_RO { KEEP (*(.eh_frame)) *(.eh_frame.*) }
+  .gcc_except_table   : ONLY_IF_RO { *(.gcc_except_table
+  .gcc_except_table.*) }
+  .gnu_extab   : ONLY_IF_RO { *(.gnu_extab*) }
+  /* These sections are generated by the Sun/Oracle C++ compiler.  */
+  .exception_ranges   : ONLY_IF_RO { *(.exception_ranges
+  .exception_ranges*) }
+  /* Adjust the address for the data segment.  We want to adjust up to
+     the same address within the page on the next page up.  */
+  . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE));
+  /* Exception handling  */
+  .eh_frame       : ONLY_IF_RW { KEEP (*(.eh_frame)) *(.eh_frame.*) }
+  .gnu_extab      : ONLY_IF_RW { *(.gnu_extab) }
+  .gcc_except_table   : ONLY_IF_RW { *(.gcc_except_table .gcc_except_table.*) }
+  .exception_ranges   : ONLY_IF_RW { *(.exception_ranges .exception_ranges*) }
+  /* Thread Local Storage sections  */
+  .tdata	  : { *(.tdata .tdata.* .gnu.linkonce.td.*) }
+  .tbss		  : { *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon) }
+  .preinit_array     :
+  {
+    PROVIDE_HIDDEN (__preinit_array_start = .);
+    KEEP (*(.preinit_array))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+  }
+  .init_array     :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+    KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  }
+  .fini_array     :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+    KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
+    PROVIDE_HIDDEN (__fini_array_end = .);
+  }
+  .ctors          :
+  {
+    /* gcc uses crtbegin.o to find the start of
+       the constructors, so we make sure it is
+       first.  Because this is a wildcard, it
+       doesn't matter if the user does not
+       actually link against crtbegin.o; the
+       linker won't look for a file to match a
+       wildcard.  The wildcard also means that it
+       doesn't matter which directory crtbegin.o
+       is in.  */
+    KEEP (*crtbegin.o(.ctors))
+    KEEP (*crtbegin?.o(.ctors))
+    /* We don't want to include the .ctor section from
+       the crtend.o file until after the sorted ctors.
+       The .ctor section from the crtend file contains the
+       end of ctors marker and it must be last */
+    KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
+    KEEP (*(SORT(.ctors.*)))
+    KEEP (*(.ctors))
+  }
+  .dtors          :
+  {
+    KEEP (*crtbegin.o(.dtors))
+    KEEP (*crtbegin?.o(.dtors))
+    KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
+    KEEP (*(SORT(.dtors.*)))
+    KEEP (*(.dtors))
+  }
+  .jcr            : { KEEP (*(.jcr)) }
+  .data.rel.ro : { *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*) *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*) }
+  .dynamic        : { *(.dynamic) }
+  .got            : { *(.got) *(.igot) }
+  . = DATA_SEGMENT_RELRO_END (SIZEOF (.got.plt) >= 24 ? 24 : 0, .);
+  .got.plt        : { *(.got.plt)  *(.igot.plt) }
+  .data           :
+  {
+    *(.data .data.* .gnu.linkonce.d.*)
+    SORT(CONSTRUCTORS)
+  }
+  .data1          : { *(.data1) }
+  _edata = .; PROVIDE (edata = .);
+  . = .;
+  __bss_start = .;
+  .bss            :
+  {
+   *(.dynbss)
+   *(.bss .bss.* .gnu.linkonce.b.*)
+   *(COMMON)
+   /* Align here to ensure that the .bss section occupies space up to
+      _end.  Align after .bss to ensure correct alignment even if the
+      .bss section disappears because there are no input sections.
+      FIXME: Why do we need it? When there is no .bss section, we don't
+      pad the .data section.  */
+   . = ALIGN(. != 0 ? 64 / 8 : 1);
+  }
+  .lbss   :
+  {
+    *(.dynlbss)
+    *(.lbss .lbss.* .gnu.linkonce.lb.*)
+    *(LARGE_COMMON)
+  }
+  . = ALIGN(64 / 8);
+  . = SEGMENT_START("ldata-segment", .);
+  .lrodata   ALIGN(CONSTANT (MAXPAGESIZE)) + (. & (CONSTANT (MAXPAGESIZE) - 1)) :
+  {
+    *(.lrodata .lrodata.* .gnu.linkonce.lr.*)
+  }
+  .ldata   ALIGN(CONSTANT (MAXPAGESIZE)) + (. & (CONSTANT (MAXPAGESIZE) - 1)) :
+  {
+    *(.ldata .ldata.* .gnu.linkonce.l.*)
+    . = ALIGN(. != 0 ? 64 / 8 : 1);
+  }
+  . = ALIGN(64 / 8);
+  _end = .; PROVIDE (end = .);
+  . = DATA_SEGMENT_END (.);
+  /* Stabs debugging sections.  */
+  .stab          0 : { *(.stab) }
+  .stabstr       0 : { *(.stabstr) }
+  .stab.excl     0 : { *(.stab.excl) }
+  .stab.exclstr  0 : { *(.stab.exclstr) }
+  .stab.index    0 : { *(.stab.index) }
+  .stab.indexstr 0 : { *(.stab.indexstr) }
+  .comment       0 : { *(.comment) }
+  /* DWARF debug sections.
+     Symbols in the DWARF debugging sections are relative to the beginning
+     of the section so we begin them at 0.  */
+  /* DWARF 1 */
+  .debug          0 : { *(.debug) }
+  .line           0 : { *(.line) }
+  /* GNU DWARF 1 extensions */
+  .debug_srcinfo  0 : { *(.debug_srcinfo) }
+  .debug_sfnames  0 : { *(.debug_sfnames) }
+  /* DWARF 1.1 and DWARF 2 */
+  .debug_aranges  0 : { *(.debug_aranges) }
+  .debug_pubnames 0 : { *(.debug_pubnames) }
+  /* DWARF 2 */
+  .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
+  .debug_abbrev   0 : { *(.debug_abbrev) }
+  .debug_line     0 : { *(.debug_line .debug_line.* .debug_line_end ) }
+  .debug_frame    0 : { *(.debug_frame) }
+  .debug_str      0 : { *(.debug_str) }
+  .debug_loc      0 : { *(.debug_loc) }
+  .debug_macinfo  0 : { *(.debug_macinfo) }
+  /* SGI/MIPS DWARF 2 extensions */
+  .debug_weaknames 0 : { *(.debug_weaknames) }
+  .debug_funcnames 0 : { *(.debug_funcnames) }
+  .debug_typenames 0 : { *(.debug_typenames) }
+  .debug_varnames  0 : { *(.debug_varnames) }
+  /* DWARF 3 */
+  .debug_pubtypes 0 : { *(.debug_pubtypes) }
+  .debug_ranges   0 : { *(.debug_ranges) }
+  /* DWARF Extension.  */
+  .debug_macro    0 : { *(.debug_macro) }
+  .gnu.attributes 0 : { KEEP (*(.gnu.attributes)) }
+  /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
+}
+
+
+==================================================
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crt1.o succeeded
+/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crt1.o
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crti.o succeeded
+/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crti.o
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/crtbegin.o succeeded
+/usr/lib/gcc/x86_64-linux-gnu/5.4.0/crtbegin.o
+attempt to open /tmp/kld-410072.o succeeded
+/tmp/kld-410072.o
+attempt to open libkld.o succeeded
+libkld.o
+attempt to open /home/eli/llvm/lib/libLLVMX86Disassembler.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86Disassembler.a succeeded
+attempt to open /home/eli/llvm/lib/libLLVMX86AsmParser.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86AsmParser.a succeeded
+(/home/eli/llvm/lib/libLLVMX86AsmParser.a)X86AsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMX86AsmParser.a)X86AsmInstrumentation.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMX86CodeGen.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86CodeGen.a succeeded
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86AsmPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86MCInstLower.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86MachineFunctionInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86RegisterInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86ShuffleDecodeConstantPool.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86TargetMachine.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86TargetObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86TargetTransformInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86VZeroUpper.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86WinAllocaExpander.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86WinEHState.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86CallFrameOptimization.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86CmovConversion.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86CondBrFolding.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86DomainReassignment.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86DiscriminateMemOps.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86ExpandPseudo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FixupBWInsts.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FixupLEAs.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86AvoidStoreForwardingBlocks.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FixupSetCC.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FlagsCopyLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FloatingPoint.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FrameLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86ISelDAGToDAG.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86ISelLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86IndirectBranchTracking.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86InterleavedAccess.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86InsertPrefetch.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86InstrInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86EvexToVex.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86MacroFusion.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86OptimizeLEAs.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86PadShortFunction.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86RetpolineThunks.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86SelectionDAGInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86SpeculativeLoadHardening.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86Subtarget.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86CallingConv.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86CallLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86FastISel.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86InstructionSelector.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86InstrFMA3Info.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86InstrFoldTables.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86LegalizerInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86CodeGen.a)X86RegisterBankInfo.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMGlobalISel.so failed
+attempt to open /home/eli/llvm/lib/libLLVMGlobalISel.a succeeded
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)CallLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)GlobalISel.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)IRTranslator.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)InstructionSelect.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)InstructionSelector.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)LegalityPredicates.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)LegalizeMutations.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)Legalizer.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)LegalizerHelper.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)LegalizerInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)Localizer.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)MachineIRBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)RegBankSelect.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)RegisterBank.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)RegisterBankInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)Utils.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)CSEInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)CSEMIRBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMGlobalISel.a)GISelChangeObserver.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMSelectionDAG.so failed
+attempt to open /home/eli/llvm/lib/libLLVMSelectionDAG.a succeeded
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)DAGCombiner.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)FastISel.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)FunctionLoweringInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeDAG.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAGBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAG.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAGAddressAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAGISel.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAGTargetInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)StatepointLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)TargetLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeTypes.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeVectorOps.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeVectorTypes.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)ScheduleDAGRRList.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)ScheduleDAGSDNodes.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)ScheduleDAGVLIW.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAGDumper.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)SelectionDAGPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)InstrEmitter.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeFloatTypes.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeIntegerTypes.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)LegalizeTypesGeneric.cpp.o
+(/home/eli/llvm/lib/libLLVMSelectionDAG.a)ResourcePriorityQueue.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMAsmPrinter.so failed
+attempt to open /home/eli/llvm/lib/libLLVMAsmPrinter.a succeeded
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)AsmPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)AsmPrinterDwarf.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)AsmPrinterInlineAsm.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DIE.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfCFIException.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfDebug.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfExpression.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfFile.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfStringPool.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfUnit.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)EHStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)WinCFGuard.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)WinException.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)CodeViewDebug.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)WasmException.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)AccelTable.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)AddressPool.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)ARMException.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DebugHandlerBase.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DebugLocStream.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DIEHash.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DwarfCompileUnit.cpp.o
+(/home/eli/llvm/lib/libLLVMAsmPrinter.a)DbgEntityHistoryCalculator.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMCodeGen.so failed
+attempt to open /home/eli/llvm/lib/libLLVMCodeGen.a succeeded
+(/home/eli/llvm/lib/libLLVMCodeGen.a)Analysis.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)AtomicExpandPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)BasicTargetTransformInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)BreakFalseDeps.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)CallingConvLower.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)CFIInstrInserter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)DFAPacketizer.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)EarlyIfConversion.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)EdgeBundles.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ExecutionDomainFix.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)FaultMaps.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)GCMetadata.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)GCMetadataPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)GCStrategy.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)IndirectBrExpandPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)InterleavedAccessPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)IntrinsicLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LexicalScopes.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LivePhysRegs.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveRangeShrink.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveVariables.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LLVMTargetMachine.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LoopTraversal.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LowLevelType.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineBasicBlock.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineBlockFrequencyInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineBranchProbabilityInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineCombiner.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineDominators.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineFrameInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineFunction.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineFunctionPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineFunctionPrinterPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineInstrBundle.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineInstr.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineLoopInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineModuleInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineModuleInfoImpls.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineOperand.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineOptimizationRemarkEmitter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineRegisterInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineScheduler.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineSSAUpdater.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineTraceMetrics.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineVerifier.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MIRPrintingPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MacroFusion.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PseudoSourceValue.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ReachingDefAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegisterClassInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegisterPressure.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ScheduleDAG.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ScheduleDAGInstrs.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ScheduleDAGPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SlotIndexes.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)StackMaps.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)StackProtector.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetFrameLoweringImpl.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetInstrInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetLoweringBase.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetLoweringObjectFileImpl.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetOptionsImpl.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetPassConfig.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetRegisterInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetSchedule.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TargetSubtargetInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TwoAddressInstructionPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)UnreachableBlockElim.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ValueTypes.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)VirtRegMap.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)WasmEHPrepare.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)WinEHPrepare.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)XRayInstrumentation.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)BranchFolding.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)CodeGen.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)CodeGenPrepare.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)DeadMachineInstructionElim.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)DetectDeadLanes.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)DwarfEHPrepare.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ExpandISelPseudos.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ExpandMemCmp.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ExpandPostRAPseudos.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ExpandReductions.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)FEntryInserter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)FuncletLayout.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)GCRootLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)IfConversion.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ImplicitNullChecks.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)InterleavedLoadCombinePass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LazyMachineBlockFrequencyInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveDebugValues.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveDebugVariables.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveIntervals.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveInterval.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveRangeCalc.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveStacks.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LocalStackSlotAllocation.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LowerEmuTLS.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineBlockPlacement.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineCopyPropagation.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineCSE.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineLICM.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineOutliner.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachinePipeliner.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachinePostDominators.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineRegionInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineSink.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PatchableFunction.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MIRPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)OptimizePHIs.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PeepholeOptimizer.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PHIElimination.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PHIEliminationUtils.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PostRAHazardRecognizer.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PostRASchedulerList.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PreISelIntrinsicLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ProcessImplicitDefs.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)PrologEpilogInserter.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegAllocBasic.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegAllocFast.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegAllocGreedy.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegisterCoalescer.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegisterScavenging.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RenameIndependentSubregs.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MIRCanonicalizerPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegUsageInfoCollector.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegUsageInfoPropagate.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ResetMachineFunctionPass.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SafeStack.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SafeStackColoring.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SafeStackLayout.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ScalarizeMaskedMemIntrin.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ScoreboardHazardRecognizer.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ShadowStackGCLowering.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)ShrinkWrap.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SjLjEHPrepare.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SpillPlacement.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)SplitKit.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)StackColoring.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)StackMapLivenessAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)StackSlotColoring.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TailDuplication.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)TailDuplicator.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)AggressiveAntiDepBreaker.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)AllocationOrder.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)BranchRelaxation.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)CalcSpillWeights.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)CriticalAntiDepBreaker.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)InlineSpiller.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)InterferenceCache.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LatencyPriorityQueue.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveIntervalUnion.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveRangeEdit.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveRegMatrix.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)LiveRegUnits.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)MachineDominanceFrontier.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegAllocBase.cpp.o
+(/home/eli/llvm/lib/libLLVMCodeGen.a)RegisterUsageInfo.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMScalarOpts.so failed
+attempt to open /home/eli/llvm/lib/libLLVMScalarOpts.a succeeded
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)ConstantHoisting.cpp.o
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)GVN.cpp.o
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)LoopStrengthReduce.cpp.o
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)MergeICmps.cpp.o
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)PartiallyInlineLibCalls.cpp.o
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)Reassociate.cpp.o
+(/home/eli/llvm/lib/libLLVMScalarOpts.a)SimplifyCFGPass.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMInstCombine.so failed
+attempt to open /home/eli/llvm/lib/libLLVMInstCombine.a succeeded
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstructionCombining.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineAddSub.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineAtomicRMW.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineAndOrXor.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineCalls.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineCasts.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineCompares.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineLoadStoreAlloca.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineMulDivRem.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombinePHI.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineSelect.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineShifts.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineSimplifyDemanded.cpp.o
+(/home/eli/llvm/lib/libLLVMInstCombine.a)InstCombineVectorOps.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMAggressiveInstCombine.so failed
+attempt to open /home/eli/llvm/lib/libLLVMAggressiveInstCombine.a succeeded
+attempt to open /home/eli/llvm/lib/libLLVMBitWriter.so failed
+attempt to open /home/eli/llvm/lib/libLLVMBitWriter.a succeeded
+attempt to open /home/eli/llvm/lib/libLLVMX86Desc.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86Desc.a succeeded
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86MCTargetDesc.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86MCAsmInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86MCCodeEmitter.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86WinCOFFStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86WinCOFFTargetStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86AsmBackend.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86MachObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86ELFObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMX86Desc.a)X86WinCOFFObjectWriter.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMMCDisassembler.so failed
+attempt to open /home/eli/llvm/lib/libLLVMMCDisassembler.a succeeded
+(/home/eli/llvm/lib/libLLVMMCDisassembler.a)MCRelocationInfo.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMX86Info.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86Info.a succeeded
+(/home/eli/llvm/lib/libLLVMX86Info.a)X86TargetInfo.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMX86AsmPrinter.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86AsmPrinter.a succeeded
+(/home/eli/llvm/lib/libLLVMX86AsmPrinter.a)X86ATTInstPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMX86AsmPrinter.a)X86IntelInstPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMX86AsmPrinter.a)X86InstComments.cpp.o
+(/home/eli/llvm/lib/libLLVMX86AsmPrinter.a)X86InstPrinterCommon.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMX86Utils.so failed
+attempt to open /home/eli/llvm/lib/libLLVMX86Utils.a succeeded
+(/home/eli/llvm/lib/libLLVMX86Utils.a)X86ShuffleDecode.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMOrcJIT.so failed
+attempt to open /home/eli/llvm/lib/libLLVMOrcJIT.a succeeded
+(/home/eli/llvm/lib/libLLVMOrcJIT.a)Core.cpp.o
+(/home/eli/llvm/lib/libLLVMOrcJIT.a)Legacy.cpp.o
+(/home/eli/llvm/lib/libLLVMOrcJIT.a)OrcError.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMTransformUtils.so failed
+attempt to open /home/eli/llvm/lib/libLLVMTransformUtils.a succeeded
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)BasicBlockUtils.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)BreakCriticalEdges.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)BuildLibCalls.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)BypassSlowDivision.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)CloneFunction.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)DemoteRegToStack.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)EntryExitInstrumenter.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)EscapeEnumerator.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)InlineFunction.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)Local.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)LoopSimplify.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)LoopUtils.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)LowerInvoke.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)SSAUpdater.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)SimplifyCFG.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)SimplifyLibCalls.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)SymbolRewriter.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)ValueMapper.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)VNCoercion.cpp.o
+(/home/eli/llvm/lib/libLLVMTransformUtils.a)LCSSA.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMExecutionEngine.so failed
+attempt to open /home/eli/llvm/lib/libLLVMExecutionEngine.a succeeded
+(/home/eli/llvm/lib/libLLVMExecutionEngine.a)ExecutionEngine.cpp.o
+(/home/eli/llvm/lib/libLLVMExecutionEngine.a)SectionMemoryManager.cpp.o
+(/home/eli/llvm/lib/libLLVMExecutionEngine.a)TargetSelect.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMTarget.so failed
+attempt to open /home/eli/llvm/lib/libLLVMTarget.a succeeded
+(/home/eli/llvm/lib/libLLVMTarget.a)TargetLoweringObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMTarget.a)TargetMachine.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMAnalysis.so failed
+attempt to open /home/eli/llvm/lib/libLLVMAnalysis.a succeeded
+(/home/eli/llvm/lib/libLLVMAnalysis.a)AliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)AssumptionCache.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)BasicAliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)BlockFrequencyInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)BlockFrequencyInfoImpl.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)BranchProbabilityInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CFG.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CFLAndersAliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CFLSteensAliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CallGraph.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CallGraphSCCPass.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CaptureTracking.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CmpInstAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ConstantFolding.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)DependenceAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)DomTreeUpdater.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)DominanceFrontier.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)EHPersonalities.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)GlobalsModRef.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)IVUsers.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)InlineCost.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)InstructionPrecedenceTracking.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)InstructionSimplify.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LazyValueInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LegacyDivergenceAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)Loads.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LoopAnalysisManager.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LoopInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LoopPass.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)MemoryBuiltins.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)MemoryDependenceAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)MemoryLocation.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)MemorySSA.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)MemorySSAUpdater.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ObjCARCAliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ObjCARCAnalysisUtils.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ObjCARCInstKind.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)OptimizationRemarkEmitter.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)OrderedBasicBlock.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)OrderedInstructions.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)PHITransAddr.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)PhiValues.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)PostDominators.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ProfileSummaryInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ScalarEvolution.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ScalarEvolutionAliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ScalarEvolutionExpander.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ScalarEvolutionNormalization.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)SyncDependenceAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)TargetLibraryInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)TargetTransformInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)TypeBasedAliasAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ScopedNoAliasAA.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ValueLattice.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)ValueTracking.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)VectorUtils.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)AliasAnalysisSummary.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)CodeMetrics.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)DemandedBits.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)DivergenceAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)GuardUtils.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)IteratedDominanceFrontier.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LazyBlockFrequencyInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LoopAccessAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)AliasSetTracker.cpp.o
+(/home/eli/llvm/lib/libLLVMAnalysis.a)LazyBranchProbabilityInfo.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMProfileData.so failed
+attempt to open /home/eli/llvm/lib/libLLVMProfileData.a succeeded
+(/home/eli/llvm/lib/libLLVMProfileData.a)InstrProf.cpp.o
+(/home/eli/llvm/lib/libLLVMProfileData.a)SampleProf.cpp.o
+(/home/eli/llvm/lib/libLLVMProfileData.a)SampleProfReader.cpp.o
+(/home/eli/llvm/lib/libLLVMProfileData.a)ProfileSummaryBuilder.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMRuntimeDyld.so failed
+attempt to open /home/eli/llvm/lib/libLLVMRuntimeDyld.a succeeded
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)JITSymbol.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RTDyldMemoryManager.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RuntimeDyld.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RuntimeDyldChecker.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RuntimeDyldCOFF.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RuntimeDyldELF.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RuntimeDyldMachO.cpp.o
+(/home/eli/llvm/lib/libLLVMRuntimeDyld.a)RuntimeDyldELFMips.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMObject.so failed
+attempt to open /home/eli/llvm/lib/libLLVMObject.a succeeded
+(/home/eli/llvm/lib/libLLVMObject.a)Binary.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)COFFObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)ELF.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)ELFObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)Error.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)MachOObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)MachOUniversal.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)ObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)SymbolicFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)WasmObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)WindowsResource.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)Archive.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)IRObjectFile.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)IRSymtab.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)ModuleSymbolTable.cpp.o
+(/home/eli/llvm/lib/libLLVMObject.a)RecordStreamer.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMMCParser.so failed
+attempt to open /home/eli/llvm/lib/libLLVMMCParser.a succeeded
+(/home/eli/llvm/lib/libLLVMMCParser.a)AsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)COFFAsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)DarwinAsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)ELFAsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)MCAsmLexer.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)MCAsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)MCAsmParserExtension.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)MCTargetAsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)WasmAsmParser.cpp.o
+(/home/eli/llvm/lib/libLLVMMCParser.a)AsmLexer.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMBitReader.so failed
+attempt to open /home/eli/llvm/lib/libLLVMBitReader.a succeeded
+(/home/eli/llvm/lib/libLLVMBitReader.a)BitcodeReader.cpp.o
+(/home/eli/llvm/lib/libLLVMBitReader.a)BitstreamReader.cpp.o
+(/home/eli/llvm/lib/libLLVMBitReader.a)MetadataLoader.cpp.o
+(/home/eli/llvm/lib/libLLVMBitReader.a)ValueList.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMMC.so failed
+attempt to open /home/eli/llvm/lib/libLLVMMC.a succeeded
+(/home/eli/llvm/lib/libLLVMMC.a)MCAsmBackend.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCAsmInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCAsmInfoCOFF.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCAsmInfoDarwin.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCAsmInfoELF.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCAsmStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCAssembler.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCCodeEmitter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCCodePadder.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCCodeView.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCContext.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCDwarf.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCELFObjectTargetWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCELFStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCExpr.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCFragment.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCInst.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCInstPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCInstrAnalysis.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCInstrDesc.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCMachOStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCMachObjectTargetWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCNullStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCObjectFileInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCObjectStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCRegisterInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSchedule.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSection.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSectionCOFF.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSectionELF.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSectionMachO.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSectionWasm.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSubtargetInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSymbol.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCSymbolELF.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCTargetOptions.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCValue.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCWasmStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCWin64EH.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCWinCOFFStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCWinEH.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MachObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)StringTableBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)SubtargetFeature.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)WasmObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)WinCOFFObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)ELFObjectWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMMC.a)MCLinkerOptimizationHint.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMDebugInfoCodeView.so failed
+attempt to open /home/eli/llvm/lib/libLLVMDebugInfoCodeView.a succeeded
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)ContinuationRecordBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)CVTypeVisitor.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)EnumTables.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)GlobalTypeTableBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)Line.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)SimpleTypeSerializer.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)SymbolRecordMapping.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)TypeDumpVisitor.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)TypeIndex.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)TypeHashing.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)TypeRecordMapping.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)TypeTableCollection.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)CodeViewError.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)CodeViewRecordIO.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)Formatters.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)RecordName.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)RecordSerialization.cpp.o
+(/home/eli/llvm/lib/libLLVMDebugInfoCodeView.a)TypeIndexDiscovery.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMDebugInfoMSF.so failed
+attempt to open /home/eli/llvm/lib/libLLVMDebugInfoMSF.a succeeded
+attempt to open /home/eli/llvm/lib/libLLVMCore.so failed
+attempt to open /home/eli/llvm/lib/libLLVMCore.a succeeded
+(/home/eli/llvm/lib/libLLVMCore.a)AsmWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Attributes.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)AutoUpgrade.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)BasicBlock.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Comdat.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)ConstantFold.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)ConstantRange.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Constants.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DIBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DataLayout.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DebugInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DebugInfoMetadata.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DebugLoc.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DiagnosticInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Dominators.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Function.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)GVMaterializer.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Globals.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)IRBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)IRPrintingPasses.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)InlineAsm.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Instruction.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Instructions.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)IntrinsicInst.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)LLVMContext.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)LLVMContextImpl.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)LegacyPassManager.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)MDBuilder.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Mangler.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Metadata.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Module.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Operator.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)OptBisect.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Pass.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)PassInstrumentation.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)PassManager.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)PassRegistry.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)PassTimingInfo.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)RemarkStreamer.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)ProfileSummary.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Statepoint.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Type.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)TypeFinder.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Use.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)User.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Value.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)ValueSymbolTable.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)Verifier.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DiagnosticHandler.cpp.o
+(/home/eli/llvm/lib/libLLVMCore.a)DiagnosticPrinter.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMBinaryFormat.so failed
+attempt to open /home/eli/llvm/lib/libLLVMBinaryFormat.a succeeded
+(/home/eli/llvm/lib/libLLVMBinaryFormat.a)Dwarf.cpp.o
+(/home/eli/llvm/lib/libLLVMBinaryFormat.a)Magic.cpp.o
+(/home/eli/llvm/lib/libLLVMBinaryFormat.a)Wasm.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMSupport.so failed
+attempt to open /home/eli/llvm/lib/libLLVMSupport.a succeeded
+(/home/eli/llvm/lib/libLLVMSupport.a)APFloat.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)APInt.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ARMAttributeParser.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)BinaryStreamError.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)BinaryStreamReader.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)BinaryStreamRef.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)BinaryStreamWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)BlockFrequency.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)BranchProbability.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Chrono.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)CodeGenCoverage.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)CommandLine.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Compression.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ConvertUTFWrapper.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)DataExtractor.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Debug.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)DebugCounter.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)DJB.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Error.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ErrorHandling.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)FoldingSet.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)FormattedStream.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)FormatVariadic.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)GraphWriter.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Hashing.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)IntEqClasses.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)IntervalMap.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ItaniumManglingCanonicalizer.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)JamCRC.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)KnownBits.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)LEB128.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)LineIterator.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)LowLevelType.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ManagedStatic.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)MathExtras.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)MemoryBuffer.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)MD5.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)NativeFormatting.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)PrettyStackTrace.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)RandomNumberGenerator.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Regex.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ScaledNumber.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ScopedPrinter.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)SHA1.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)SmallPtrSet.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)SmallVector.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)SourceMgr.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)StringExtras.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)StringMap.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)StringSaver.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)StringRef.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)SymbolRemappingReader.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Timer.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ToolOutputFile.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Triple.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Twine.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)UnicodeCaseFold.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)WithColor.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)YAMLParser.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)YAMLTraits.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)raw_ostream.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)regcomp.c.o
+(/home/eli/llvm/lib/libLLVMSupport.a)regerror.c.o
+(/home/eli/llvm/lib/libLLVMSupport.a)regexec.c.o
+(/home/eli/llvm/lib/libLLVMSupport.a)regfree.c.o
+(/home/eli/llvm/lib/libLLVMSupport.a)regstrlcpy.c.o
+(/home/eli/llvm/lib/libLLVMSupport.a)DynamicLibrary.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Host.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Memory.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Mutex.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Path.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Process.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Program.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)RWMutex.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Signals.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)TargetRegistry.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Threading.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Valgrind.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Watchdog.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ARMTargetParser.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ARMBuildAttrs.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)ConvertUTF.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Signposts.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Unicode.cpp.o
+(/home/eli/llvm/lib/libLLVMSupport.a)Errno.cpp.o
+attempt to open /home/eli/llvm/lib/libLLVMDemangle.so failed
+attempt to open /home/eli/llvm/lib/libLLVMDemangle.a succeeded
+(/home/eli/llvm/lib/libLLVMDemangle.a)ItaniumDemangle.cpp.o
+attempt to open /home/eli/llvm/lib/libz.so failed
+attempt to open /home/eli/llvm/lib/libz.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libz.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libz.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libz.so succeeded
+-lz (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libz.so)
+attempt to open /home/eli/llvm/lib/librt.so failed
+attempt to open /home/eli/llvm/lib/librt.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/librt.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/librt.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/librt.so succeeded
+-lrt (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/librt.so)
+attempt to open /home/eli/llvm/lib/libdl.so failed
+attempt to open /home/eli/llvm/lib/libdl.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libdl.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libdl.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libdl.so succeeded
+-ldl (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libdl.so)
+attempt to open /home/eli/llvm/lib/libtinfo.so failed
+attempt to open /home/eli/llvm/lib/libtinfo.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libtinfo.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libtinfo.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libtinfo.so succeeded
+-ltinfo (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libtinfo.so)
+attempt to open /home/eli/llvm/lib/libpthread.so failed
+attempt to open /home/eli/llvm/lib/libpthread.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libpthread.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libpthread.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libpthread.so succeeded
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libpthread.so
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libpthread.so
+attempt to open /lib/x86_64-linux-gnu/libpthread.so.0 succeeded
+/lib/x86_64-linux-gnu/libpthread.so.0
+attempt to open /usr/lib/x86_64-linux-gnu/libpthread_nonshared.a succeeded
+attempt to open /home/eli/llvm/lib/libm.so failed
+attempt to open /home/eli/llvm/lib/libm.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libm.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libm.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libm.so succeeded
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libm.so
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libm.so
+attempt to open /lib/x86_64-linux-gnu/libm.so.6 succeeded
+/lib/x86_64-linux-gnu/libm.so.6
+attempt to open /usr/lib/x86_64-linux-gnu/libmvec_nonshared.a succeeded
+attempt to open /lib/x86_64-linux-gnu/libmvec.so.1 succeeded
+/lib/x86_64-linux-gnu/libmvec.so.1
+/lib/x86_64-linux-gnu/libmvec.so.1
+attempt to open /home/eli/llvm/lib/libstdc++.so failed
+attempt to open /home/eli/llvm/lib/libstdc++.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libstdc++.so succeeded
+-lstdc++ (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/libstdc++.so)
+attempt to open /home/eli/llvm/lib/libm.so failed
+attempt to open /home/eli/llvm/lib/libm.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libm.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libm.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libm.so succeeded
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libm.so
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libm.so
+attempt to open /lib/x86_64-linux-gnu/libm.so.6 succeeded
+/lib/x86_64-linux-gnu/libm.so.6
+attempt to open /usr/lib/x86_64-linux-gnu/libmvec_nonshared.a succeeded
+attempt to open /lib/x86_64-linux-gnu/libmvec.so.1 succeeded
+/lib/x86_64-linux-gnu/libmvec.so.1
+attempt to open /home/eli/llvm/lib/libgcc_s.so failed
+attempt to open /home/eli/llvm/lib/libgcc_s.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc_s.so succeeded
+-lgcc_s (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc_s.so)
+attempt to open /home/eli/llvm/lib/libgcc.so failed
+attempt to open /home/eli/llvm/lib/libgcc.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc.a succeeded
+attempt to open /home/eli/llvm/lib/libc.so failed
+attempt to open /home/eli/llvm/lib/libc.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libc.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libc.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libc.so succeeded
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libc.so
+opened script file /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/libc.so
+attempt to open /lib/x86_64-linux-gnu/libc.so.6 succeeded
+/lib/x86_64-linux-gnu/libc.so.6
+attempt to open /usr/lib/x86_64-linux-gnu/libc_nonshared.a succeeded
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)elf-init.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)atexit.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)stat.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)fstat.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)lstat.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)stat64.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)fstat64.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)lstat64.oS
+(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)mknod.oS
+attempt to open /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 succeeded
+/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+attempt to open /home/eli/llvm/lib/libgcc_s.so failed
+attempt to open /home/eli/llvm/lib/libgcc_s.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc_s.so succeeded
+-lgcc_s (/usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc_s.so)
+attempt to open /home/eli/llvm/lib/libgcc.so failed
+attempt to open /home/eli/llvm/lib/libgcc.a failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc.so failed
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/libgcc.a succeeded
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/crtend.o succeeded
+/usr/lib/gcc/x86_64-linux-gnu/5.4.0/crtend.o
+attempt to open /usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crtn.o succeeded
+/usr/lib/gcc/x86_64-linux-gnu/5.4.0/../../../x86_64-linux-gnu/crtn.o
+/tmp/kld-410072.o: In function `InitializeModuleAndPassManager()':
+/home/eli/sproj-git/kaleidoscope/kld.cpp:1114: undefined reference to `llvm::createHelloPass()'
+clang-9: error: linker command failed with exit code 1 (use -v to see invocation)
+Makefile:13: recipe for target 'kld' failed
+make: *** [kld] Error 1

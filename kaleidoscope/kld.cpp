@@ -1,5 +1,4 @@
 #include "KaleidoscopeJIT.h"
-// #include "CustomJIT.h"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -18,6 +17,7 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Transforms/Hello/Hello.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -89,8 +89,14 @@ public:
 
 Reader reader;
 
+bool DoReplacement;
+
 static std::string IdentifierStr;
 static double NumVal;
+
+static bool isident(char c) {
+  return isalnum(c) || c == '_';
+}
 
 static int gettok() {
   static int LastChar = ' ';
@@ -110,10 +116,10 @@ static int gettok() {
     LastChar = reader.getchar();
   }
 
-  if (isalpha(LastChar)) { // identifier
+  if (isalpha(LastChar) || LastChar == '_') { // identifier
     IdentifierStr = LastChar;
     // eat maximal string
-    while (isalnum((LastChar = reader.getchar())))
+    while (isident((LastChar = reader.getchar())))
       IdentifierStr += LastChar;
 
     if (IdentifierStr == "def")
@@ -906,6 +912,8 @@ Value * BinaryExprAST::codegen() {
   return Builder.CreateCall(F, Ops, "binop");
 }
 
+void InitializeModuleAndPassManager();
+
 Value * CallExprAST::codegen() {
   Function * CalleeF = getFunction(Callee);
   if (!CalleeF)
@@ -1094,6 +1102,8 @@ Function * FunctionAST::codegen() {
 // ===================================
 
 void InitializeModuleAndPassManager(void) {
+  fprintf(stderr, "init MPM\n");
+
   // Open module
   TheModule = llvm::make_unique<Module>("kld_jit", TheContext);
   TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
@@ -1101,6 +1111,7 @@ void InitializeModuleAndPassManager(void) {
   // Create pass manager
   TheFPM = llvm::make_unique<legacy::FunctionPassManager>(TheModule.get());
   // TheFPM->add(createPromoteMemoryToRegisterPass()); // mem2reg
+  TheFPM->add(createHelloPass()); // TODO
   TheFPM->add(createInstructionCombiningPass());
   TheFPM->add(createReassociatePass());
   TheFPM->add(createGVNPass()); // common subexpr
@@ -1113,8 +1124,8 @@ static void HandleDefinition() {
   if (auto FnAST = ParseDefinition()) {
     if (auto * FnIR = FnAST->codegen()) {
       //fprintf(stderr, "Read function definition:");
-      //FnIR->print(errs());
-      //fprintf(stderr, "\n");
+      FnIR->print(errs());
+      fprintf(stderr, "\n");
 
       // add to JIT
       // I think to allow function update, we need to save the VModuleKey
@@ -1131,8 +1142,9 @@ static void HandleExtern() {
   if (auto ProtoAST = ParseExtern()) {
     if (auto * FnIR = ProtoAST->codegen()) {
       //fprintf(stderr, "Read extern:");
-      //FnIR->print(errs());
-      //fprintf(stderr, "\n");
+      FnIR->print(errs());
+      fprintf(stderr, "\n");
+      
       FunctionProtos[ProtoAST->getName()] = std::move(ProtoAST);
     }
   } else
@@ -1141,7 +1153,11 @@ static void HandleExtern() {
 
 static void HandleTopLevelExpression() {
   if (auto FnAST = ParseTopLevelExpr()) {
-    if (FnAST->codegen()) {
+    if (auto * FnIR = FnAST->codegen()) {
+      // print IR
+      FnIR->print(errs());
+      fprintf(stderr, "\n");
+
       // create anon func for eval
       auto H = TheJIT->addModule(std::move(TheModule));
       InitializeModuleAndPassManager();
@@ -1153,13 +1169,13 @@ static void HandleTopLevelExpression() {
       // double (*FP)() = (double (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
       
       double (*FP)() = nullptr;
-      if (auto ExprAddr = ExprSymbol.getAddress())
+      if (auto ExprAddr = ExprSymbol.getAddress()) {
         FP = (double(*)())*ExprAddr;
-      else {
+        fprintf(stderr, "Evaluated to %f\n", FP());
+      } else {
         logAllUnhandledErrors(ExprAddr.takeError(), llvm::errs(), "kaleidoscope error: ");
         exit(1);
       }
-      fprintf(stderr, "Evaluated to %f\n", FP());
 
       // remove anon func
       TheJIT->removeModule(H);
@@ -1217,7 +1233,7 @@ extern "C" DLLEXPORT double printd(double X) {
   return 0;
 }
 
-int main() {
+int main(int argc, char ** argv) {
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
   InitializeNativeTargetAsmParser();
@@ -1234,6 +1250,12 @@ int main() {
   reader.pushsource(stdin);
 
   fprintf(stderr, "kaleidoscope interpreter\n");
+
+  if (argc > 1 && !strcmp(argv[1], "r")) {
+    fprintf(stderr, "Running with FU replacements!\n");
+    DoReplacement = true;
+  }
+
   fprintf(stderr, "kld> ");
   getNextToken();
 
