@@ -23,18 +23,20 @@ Advisor: Rajit Manohar
 ## Project TODO
 
 - [ ] LLVM write up
-- [ ] ARM in gem5
-- [ ] LLVM cross compile to ARM
-- [ ] JIT
+- [x] JIT
+  - [ ] get extern’d functions working again (`-rdynamic` no longer available)
+  - [ ] Will need to add arrays to kld. This involves using the notorious `getelementptr` instruction.
 - [ ] BLAS
 - [ ] add hardware feature in gem5
+  - [ ] MMIO – JIT substitutes a function call with pointers?
+  - [ ] shared memory
 
 
 ## Important Dates
 
 12 Sep: Prospectus Due
 
-Reading period: presentation
+2 May: Presentation
 
 ## Project Notes
 
@@ -101,9 +103,55 @@ shoot, gotta install clang as well… ENABLE PROJECTS.
 
 it works! kaleidoscope, etc.
 
+Reinstalling release version, so it’s not huge. Much better! Also deleting all ARM stuff.
+
 ### Cross Compiling
 
 Using the `arm-linux-gnueabihf` tools, I can cross compile (just have to remember to `-static` because simulated system doesn’t have the libraries included). However, can’t figure out how to do that with LLVM. Rui will send me config tmrw.
+
+Also, have to cross compile LAPACK for ARM, not x86.
+
+Rui’s config is for compiling LLVM. To be fair, I will need all those ARM libraries. Worth a shot. might have to re-check it out.
+
+Starting over from Rui’s instructions, getting the 64 bit version of arm.
+
+Just doing x86 for now.
+
+libxml2 was the issue. trying to disable it (DLLVM_ENABLE_LIBXML2 Off) but may also have to specify another option to ignore the library.
+
+Need those other libraries: `libtinfo`, `zlib1g`, `libxml2` and `liblzma`. I’ll try and download. xml requires z. installing z. z installed. retrying xml. is this working?? setting the prefix to the base directory, we’ll see if that works. now it needs lzma. off to the races! LZMA (XZ) installed. only libtinfo left. oh, lzma needs python.
+
+CANCEL THIS. no more arm
+
+### JIT
+
+Probably want the CallExprAST codegen to take care of the call. Rather than call the actual math function, call the FU.
+
+In reality, probably don’t want to do a single BLAS function: that’ll be pretty quick for reasonable inputs. Maybe I’ll write a batched function that will do thousands of computations, and benchmark
+
+Trying to statically link. Maybe I don’t need to, and should be using full system emulation instead. static link can’t find c libs and I need to add extra paths?
+
+can’t run the JIT in full system mode. other simple programs work.
+
+making progress getting all libraries set up. can’t find weird libm in /usr/lib64 even though exists elsewhere
+
+ok, got compilation to succeed with libm hack. but now _my_ kid won’t run in gem5. kernel versions different? might have to move over to AVLSI server.
+
+Internally-defined functions don’t work (putchard and printd) in static link. also now gem5 is crashing. bad memory address? might be the new non-debug LLVM, also. Rui’s still works, but also can’t handle putchard/printd. not priorities atm, but I will need those eventually. weird, however, that other externs like the math functions work just fine.
+
+I’m going to start off with a simple function – let’s say hyp(a, b) => sqrt(a^2 + b^2). I don’t have sqrt tho. math? yup.
+
+For now, just name matching. Each argument is itself an ExprAST.
+
+**changed this in meeting:** operate on JIT IR, not AST.
+
+trying to get extern’d functions working.
+
+### Moving to AVLSI Server
+
+hopefully a permanent home. config files moved over. reinstalling LLVM & gem5. Now I actually have root access, hallelujah. compiler works!
+
+need to reinstall the x86 full system files.
 
 ## FU Notes
 
@@ -335,7 +383,45 @@ don’t worry about ACT. do it all in GEM5.
 
 Cache usually gives you a single word – look into giving up a whole line. this is technologically feasible but not the usual method.
 
+### Rui 6 Mar
 
+ideas
+
+- LLI instead of Kaleidoscope?
+  - take a look at the LLI source code
+- Copy libraries over to gem5 & get dynamic working
+  - may also be gcc version issue
+- **### fix static? ###**  on AVSLI server.
+  - may also have gcc issue?
+- figure out to get gcc to compile kaleidoscope, not clang
+- move to a new machine with root access (personal VM, AVSLI server)
+  - hopefully able to install needed software; more control
+- ARM… get libraries installed, but still have to figure out above
+- no JIT, just have two binary versions
+- write my own “simulator”?
+
+notes
+
+- gcc may be better for cross compiling
+- probably don’t need LLVM Debug
+
+### 8 Mar
+
+issue with KLD is that the benchmarks aren’t there. not the same. but it’s just the pre-jit part.
+
+should not be in the codegen part. edit the JIT itself. when see a function call, work from there. don’t operate on the AST.
+
+**IR should look the same no matter what the system is**! So this needs to run on a JIT layer
+
+Rui is: IO mapped load stores when he sees a certain function. except target is FPGA.
+
+modify mmap? intercept before it goes to cache. mmap returns virtual address.
+
+branch point is in the gem5 memory unit
+
+variable latency load. store the arguments, load the answer! don’t have to worry about waiting.
+
+final deliverable: presentation & research paper; include LLVM.
 
 ## Reading Notes
 
@@ -502,7 +588,7 @@ What I need to do now, probably, is to create a new ORC JIT layer. This layer wi
 
 ### Writing an LLVM Pass
 
-https://releases.llvm.org/6.0.1/docs/WritingAnLLVMPass.html
+https://releases.llvm.org/6.0.1/docs/WritingAnLLVMPass.html now https://llvm.org/docs/WritingAnLLVMPass.html
 
 This is what I need to do! Ideally, I want a pass that, for certain library functions, emits code for the internal FU, instead of actually calling that function.
 
@@ -515,6 +601,20 @@ I probably want a `FunctionPass`. Not sure how that will work with the call... i
 ![image-20190127231319973](/Users/elibaum/Documents/senior project/etc/codegen-screenshot.png)
 
 This is exactly what I want!
+
+Had to add `LLVMBuild.txt` to get it to compile the library correctly. It was there all along.
+
+Ok, only thing, however, is that I don’t know if this will work on the JIT. Symbol Resolver? Is called on function calls.
+
+Looks like JIT tutorial is broken for v9.
+
+Modifying the JIT: add a compile layer or something. name matching @ first.
+
+Looking at IRCompileLayer and ObjectLinkingLayer. I want to operate on the IR/IR layer. Probably when module is added. If transformation happens on function lookup, that will be a significant speed hit. That’s not in those layers. I think that’s a pass. IR to IR.
+
+Had to add .h file for Hello pass, and a `createHelloPass` to call from within kld. Now recompiling – hopefully it gets copied over. Have to make sure to only use my build script – otherwise cmake will use makefiles, not ninja, so the cache will be useless and everything will be have to be rebuilt.
+
+CMakeLists had to be updated to also install it in ~/llvm. However, now for some reason, it can’t find the create function. Looks like it’s not in the shared object. So somehow not getting compiled...
 
 ### LLVM Codegen
 
@@ -629,3 +729,8 @@ have to install gcc cross compiler. maybe just do LLVM if it doesn’t work, but
 benchmarks use ROI markers (region of interest). also reset m5 stats.
 
 PARSEC instructions are out of date and confusing. Going to skip it. However, there is an interesting point about moving files onto the disk image. I think next step is to get cross-compile working.
+
+### getelementptr
+
+http://llvm.org/docs/GetElementPtr.html
+
