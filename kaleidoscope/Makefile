@@ -1,4 +1,4 @@
-LLVM_LIBS=core orcjit native # aarch64
+LLVM_LIBS=core orcjit native support analysis # aarch64
 # ldflags creates dynamic dependency to my own copy of llvm
 FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LLVM_LIBS)` -fuse-ld=gold -g3
 ROOT=$(HOME)/sproj-git
@@ -11,7 +11,7 @@ default: kld
 
 kld kld_s kld.ll: kld.cpp $(LIBS) KaleidoscopeJIT.h
 
-COMPILE=$(CXX) $(VERBOSE) kld.cpp $(LIBS) $(FLAGS) -o $@
+COMPILE=$(CXX) $(VERBOSE) kld.cpp $(LIBS) $(FLAGS) -o $@ -save-stats
 
 kld:
 	$(COMPILE) -rdynamic

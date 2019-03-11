@@ -18,6 +18,7 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/IR/IRPrintingPasses.h"
+#include "llvm/Analysis/Passes.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -1121,6 +1122,9 @@ void InitializeModuleAndPassManager(void) {
   TheFPM->add(createCFGSimplificationPass());
   if (DoIRPrint)
     TheFPM->add(createPrintFunctionPass(llvm::errs()));
+
+  // Not sure how to get this to work (outside of opt)
+  TheFPM->add(createInstCountPass());
 
   TheFPM->doInitialization();
 }
