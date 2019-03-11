@@ -17,7 +17,7 @@ default: kld
 	$(CXX) $(VERBOSE) -g3 -O0 $< $(LIBS) -o $@ $(FLAGS) -rdynamic
 
 %-static: %.cpp libkld.o KaleidoscopeJIT.h
-	$(CXX) $(VERBOSE) -g3 -O0 -static $< $(LIBS) -o $@ $(FLAGS)
+	$(CXX) $(VERBOSE) -g3 -O0 $< $(LIBS) -o $@ $(FLAGS) -static
 
 %.ll: %.cpp
 	clang++ -g3 -S -emit-llvm $^ -o $@ $(FLAGS)
