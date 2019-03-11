@@ -17,6 +17,7 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/IR/IRPrintingPasses.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -90,7 +91,8 @@ public:
 
 Reader reader;
 
-bool DoReplacement;
+bool DoReplacement = false;
+bool DoIRPrint = false;
 
 static std::string IdentifierStr;
 static double NumVal;
@@ -1117,6 +1119,8 @@ void InitializeModuleAndPassManager(void) {
   TheFPM->add(createReassociatePass());
   TheFPM->add(createGVNPass()); // common subexpr
   TheFPM->add(createCFGSimplificationPass());
+  if (DoIRPrint)
+    TheFPM->add(createPrintFunctionPass(llvm::errs()));
 
   TheFPM->doInitialization();
 }
@@ -1124,7 +1128,7 @@ void InitializeModuleAndPassManager(void) {
 static void HandleDefinition() {
   if (auto FnAST = ParseDefinition()) {
     if (auto * FnIR = FnAST->codegen()) {
-      //fprintf(stderr, "Read function definition:");
+      // fprintf(stderr, "Read function definition:");
       // FnIR->print(errs());
       // fprintf(stderr, "\n");
 
@@ -1252,9 +1256,15 @@ int main(int argc, char ** argv) {
 
   fprintf(stderr, "kaleidoscope interpreter\n");
 
-  if (argc > 1 && !strcmp(argv[1], "r")) {
-    fprintf(stderr, "Running with FU replacements!\n");
-    DoReplacement = true;
+  if (argc > 1) {
+    if (strchr(argv[1], 'r')) {
+      fprintf(stderr, "Running with FU replacements!\n");
+      DoReplacement = true;
+    }
+    if (strchr(argv[1], 'p')) {
+      fprintf(stderr, "Printing IR!\n");
+      DoIRPrint = true;
+    }
   }
 
   fprintf(stderr, "kld> ");

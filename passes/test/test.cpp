@@ -4,6 +4,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
@@ -29,39 +30,20 @@ namespace {
       FunctionType * _funcType = FunctionType::get(retType, paramTypes, false);
       FunctionCallee _func = F.getParent()->getOrInsertFunction("_hyp", _funcType);
       
-      IRBuilder<> builder(& F.front());
+      BasicBlock * mutBB = BasicBlock::Create(Ctx, "mutate", & F);
+      IRBuilder<> builder(mutBB);
+
       auto A = F.args().begin();
-      // A->print(llvm::errs());
-      // builder.CreateCall(_func, {A, ++A});
-      for (auto &B : F) { // loop through BBs
-        for (auto &I : B) {
-          if (auto *ret = dyn_cast<ReturnInst>(&I)) {
-            // IRBuilder<> builder(op);
+      auto * f = builder.CreateCall(_func, {A, ++A});
+      auto * r = builder.CreateRet(f);
 
-            // Value * a = op->getOperand(0);
-            // Value * b = op->getOperand(1);
-            // Value * args[] = {a, b};
+      mutBB->moveBefore(& (F.getEntryBlock())); // don't run the old function
 
-            // builder.CreateCall(_func, args);
-            // return true;
-            errs() << "Found return inst: ";
-            ret->print(llvm::errs());
-            errs() << "\n";
+      errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
 
-            IRBuilder<> builder(ret);
-            Value * f = builder.CreateCall(_func, {A, ++A});
-            auto * r = builder.CreateRet(f);
-            errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
-            ret->eraseFromParent();
-            
-            return true;
-          }
-        }
-        // This BB did not contain the return.
-        B.removeFromParent();
-      }
+      verifyFunction(F);
 
-      return false;
+      return true;
     }
   };
 
