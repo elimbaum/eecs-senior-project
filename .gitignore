@@ -3,3 +3,6 @@
 *.pyc
 core.*
 vgcore.*
+*.o
+*.so
+*.a

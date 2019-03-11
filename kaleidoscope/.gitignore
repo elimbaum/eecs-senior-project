@@ -2,5 +2,6 @@ core.*
 vgcore.*
 kld
 kld-static
+kld_s
 *.o
 *.a

@@ -21,7 +21,7 @@ namespace {
       if (F.getName() != "hyp")
         return false;
 
-      errs() << "Mutating!\n";
+      // errs() << "Mutating!\n";
       
       LLVMContext& Ctx = F.getContext();
       std::vector<Type *> paramTypes = {Type::getDoubleTy(Ctx), Type::getDoubleTy(Ctx)};
@@ -34,15 +34,16 @@ namespace {
       IRBuilder<> builder(mutBB);
 
       auto A = F.args().begin();
+      // Eventually, this might look like a load/store
       auto * f = builder.CreateCall(_func, {A, ++A});
       auto * r = builder.CreateRet(f);
 
-      mutBB->moveBefore(& (F.getEntryBlock())); // don't run the old function
+      // move the new call before the existing entry point, so that it doesn't
+      // run. DCE pass will remove this code.
+      mutBB->moveBefore(& (F.getEntryBlock()));
 
-      errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
-
+      // errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
       verifyFunction(F);
-
       return true;
     }
   };
@@ -58,6 +59,7 @@ FunctionPass * llvm::createTestPass() {
   return new TestPass();
 }
 
+// JIT can also call functions here, to possible set options etc.
 extern "C" double pi(void) {
   return 3;
 }
