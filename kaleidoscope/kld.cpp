@@ -17,7 +17,6 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
-#include "llvm/Transforms/Hello/Hello.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -28,6 +27,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "../passes/test/test.h"
 
 using namespace llvm;
 using namespace llvm::orc;
@@ -1102,8 +1103,6 @@ Function * FunctionAST::codegen() {
 // ===================================
 
 void InitializeModuleAndPassManager(void) {
-  fprintf(stderr, "init MPM\n");
-
   // Open module
   TheModule = llvm::make_unique<Module>("kld_jit", TheContext);
   TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
@@ -1111,7 +1110,9 @@ void InitializeModuleAndPassManager(void) {
   // Create pass manager
   TheFPM = llvm::make_unique<legacy::FunctionPassManager>(TheModule.get());
   // TheFPM->add(createPromoteMemoryToRegisterPass()); // mem2reg
-  TheFPM->add(createHelloPass()); // TODO
+  if (DoReplacement)
+    TheFPM->add(createTestPass());
+
   TheFPM->add(createInstructionCombiningPass());
   TheFPM->add(createReassociatePass());
   TheFPM->add(createGVNPass()); // common subexpr
@@ -1124,8 +1125,8 @@ static void HandleDefinition() {
   if (auto FnAST = ParseDefinition()) {
     if (auto * FnIR = FnAST->codegen()) {
       //fprintf(stderr, "Read function definition:");
-      FnIR->print(errs());
-      fprintf(stderr, "\n");
+      // FnIR->print(errs());
+      // fprintf(stderr, "\n");
 
       // add to JIT
       // I think to allow function update, we need to save the VModuleKey
@@ -1142,8 +1143,8 @@ static void HandleExtern() {
   if (auto ProtoAST = ParseExtern()) {
     if (auto * FnIR = ProtoAST->codegen()) {
       //fprintf(stderr, "Read extern:");
-      FnIR->print(errs());
-      fprintf(stderr, "\n");
+      // FnIR->print(errs());
+      // fprintf(stderr, "\n");
       
       FunctionProtos[ProtoAST->getName()] = std::move(ProtoAST);
     }
@@ -1155,8 +1156,8 @@ static void HandleTopLevelExpression() {
   if (auto FnAST = ParseTopLevelExpr()) {
     if (auto * FnIR = FnAST->codegen()) {
       // print IR
-      FnIR->print(errs());
-      fprintf(stderr, "\n");
+      // FnIR->print(errs());
+      // fprintf(stderr, "\n");
 
       // create anon func for eval
       auto H = TheJIT->addModule(std::move(TheModule));
@@ -1224,13 +1225,13 @@ static void MainLoop() {
 /// putchard - putchar that takes a double and returns 0.
 extern "C" DLLEXPORT double putchard(double X) {
   fputc((char)X, stderr);
-  return 0;
+  return X;
 }
 
 /// printd - printf that takes a double prints it as "%f\n", returning 0.
 extern "C" DLLEXPORT double printd(double X) {
   fprintf(stderr, "%f\n", X);
-  return 0;
+  return X;
 }
 
 int main(int argc, char ** argv) {
