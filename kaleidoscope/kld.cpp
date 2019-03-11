@@ -2,6 +2,7 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -1221,6 +1222,8 @@ static void MainLoop() {
       HandleTopLevelExpression();
       break;
     }
+    // Doesn't work
+    // PrintStatistics();
   }
 }
 

@@ -6,8 +6,7 @@ COMPILE_LIB=$(CC) -c $< $(CFLAGS) $(CPPFLAGS) -o $@
 
 all: libTestPass.so libTestPass.o
 
-libTestPass.so: test.cpp
-	$(COMPILE_LIB) -fPIC
+libTestPass.so: EXTRA=-fPIC
 
-libTestPass.o: test.cpp
-	$(COMPILE_LIB)
+libTestPass.*: test.cpp
+	$(COMPILE_LIB) $(EXTRA)

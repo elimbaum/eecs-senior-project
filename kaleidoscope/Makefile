@@ -11,13 +11,11 @@ default: kld
 
 kld kld_s kld.ll: kld.cpp $(LIBS) KaleidoscopeJIT.h
 
-COMPILE=$(CXX) $(VERBOSE) kld.cpp $(LIBS) $(FLAGS) -o $@ -save-stats
+kld: EXTRA_FLAG=-rdynamic
+kld_s: EXTRA_FLAG=-static
 
-kld:
-	$(COMPILE) -rdynamic
-
-kld_s:
-	$(COMPILE) -static
+kld kld_s:
+	$(CXX) $(VERBOSE) kld.cpp $(LIBS) $(FLAGS) -o $@ $(EXTRA_FLAG)
 
 %.ll:
 	clang++ -g3 -S -emit-llvm $< -o $@
