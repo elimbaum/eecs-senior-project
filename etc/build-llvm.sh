@@ -14,7 +14,6 @@ cmake -DCMAKE_BUILD_TYPE="Release" \
   -DLLVM_TARGET_ARCH=X86 \
   -DLLVM_TARGETS_TO_BUILD=X86 \
   -DCMAKE_VERBOSE_MAKEFILE=$VERBOSE \
-  -DLLVM_ENABLE_STATS=On \
   -G Ninja ../llvm &&
 cmake --build . &&
 cmake --build . --target install

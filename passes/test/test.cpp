@@ -28,7 +28,7 @@ namespace {
       Type * retType = Type::getDoubleTy(Ctx);
 
       FunctionType * _funcType = FunctionType::get(retType, paramTypes, false);
-      FunctionCallee _func = F.getParent()->getOrInsertFunction("_hyp", _funcType);
+      FunctionCallee _func = F.getParent()->getOrInsertFunction("hypot", _funcType);
       
       BasicBlock * mutBB = BasicBlock::Create(Ctx, "mutate", & F);
       IRBuilder<> builder(mutBB);
@@ -39,7 +39,7 @@ namespace {
       auto * r = builder.CreateRet(f);
 
       // move the new call before the existing entry point, so that it doesn't
-      // run. DCE pass will remove this code.
+      // run. dead code elim pass will remove this code.
       mutBB->moveBefore(& (F.getEntryBlock()));
 
       // errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
@@ -51,15 +51,21 @@ namespace {
 }
 
 char TestPass::ID = 0;
+static RegisterPass<TestPass> X("test", "Test Pass", true, false);
 
-// Example code specifies auto-registration here that I think only applies
-// if I wanted to apply this pass to my compiled code, instead of the JIT.
+// auto registration
+// static void registerTestPass(const PassManagerBuilder &, legacy::PassManagerBase &PM) {
+//   PM.add(new TestPass());
+// }
+// 
+// static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible, registerTestPass);
 
+// for custom JIT Pass Manager
 FunctionPass * llvm::createTestPass() {
   return new TestPass();
 }
 
-// JIT can also call functions here, to possible set options etc.
+// JIT can also call functions here, to possibly set options etc.
 extern "C" double pi(void) {
   return 3;
 }

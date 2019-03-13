@@ -1,32 +1,26 @@
-# LIBS=core orcjit native analysis executionengine instcombine object runtimedyld scalaropts support
-LIBS=core orcjit native
-FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LIBS)`
-HOME=/home/accts/emb99
-ARM_TRIP=arm-linux-gnueabihf
-SYSROOT=${HOME}/sproj/gcc-${ARM_TRIP}/${ARM_TRIP}
+LLVM_LIBS=core orcjit native support analysis # aarch64
+# ldflags creates dynamic dependency to my own copy of llvm
+FLAGS=`llvm-config --cxxflags --ldflags --system-libs --libs $(LLVM_LIBS)` -fuse-ld=gold -g3
+ROOT=$(HOME)/sproj-git
+VERBOSE=#-v #-Xlinker --verbose
+CXX=clang++
+PASS=$(ROOT)/passes/test/libTestPass.o
+LIBS=$(ROOT)/kaleidoscope/libkld.o
 
-%: %.cpp
-	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -static
+EXE=hello
 
-%-arm: %.cpp
-	clang++ -v -g3 -O0 $< -o $@ $(FLAGS) -rdynamic --target=${ARM_TRIP} \
-		--sysroot=${SYSROOT}/libc \
-		-I${SYSROOT}/include/c++/8.2.1 \
-		-I${SYSROOT}/include/c++/8.2.1/${ARM_TRIP} \
-		-L${SYSROOT}/lib/gcc/${ARM_TRIP}/8.2.1 \
-		-B${SYSROOT}/bin
+default: $(EXE)
 
-%-arm2: %.cpp 
-	clang++ -v -g3 -O0 $< $(FLAGS) -static --target=${ARM_TRIP} -emit-llvm -c \
-		--sysroot=${SYSROOT}/libc \
-		-I${SYSROOT}/include/c++/8.2.1 \
-		-I${SYSROOT}/include/c++/8.2.1/${ARM_TRIP} \
-		-L${SYSROOT}/lib/gcc/${ARM_TRIP}/8.2.1 \
-		-B${SYSROOT}/bin
-	
+$(EXE) $(EXE)_s $(EXE).ll: $(EXE).cpp
 
-%.ll: %.cpp
-	clang++ -g3 -S -emit-llvm $^ -o $@ $(FLAGS)
+$(EXE): EXTRA_FLAG=-rdynamic
+$(EXE)_s: EXTRA_FLAG=-static
+
+$(EXE) $(EXE)_s:
+	$(CXX) $(VERBOSE) $(EXE).cpp $(LIBS) $(FLAGS) -o $@ $(EXTRA_FLAG)
+
+%.ll:
+	clang++ -g3 -S -emit-llvm $< -o $@
 
 clean:
 	rm core.* vgcore.*

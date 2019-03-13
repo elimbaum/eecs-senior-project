@@ -16,6 +16,9 @@ def unary!(v)
 def unary-(v)
   0-v;
 
+def unary+(v)
+  v;
+
 def binary> 10 (LHS RHS)
   RHS < LHS;
 
@@ -35,6 +38,12 @@ def binary& 6 (LHS RHS)
 
 def binary? 9 (LHS RHS) # equal sign is used by variables
   !(LHS < RHS | LHS > RHS);
+
+extern pow(x y); # already in libm
+
+extern exit();
+def assert(x)
+  if x then x else exit();
 
 ### initial testing for project
 extern sqrt(x);

@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cmath>
+using namespace std;
 
 #ifdef __arm__
 #define ARCH "ARM"
@@ -14,6 +16,13 @@
 #define ARCH "UNK"
 #endif
 
+extern "C" double hyp(double a, double b) {
+  printf("local ");
+  return 1 + sqrt(a * a + b * b);
+}
+
 int main() {
-  printf("Hello world, " ARCH "!\n");
+  cout << "Hello world, " ARCH "!\n";
+  cout << "Local:  " << hyp(3, 4) << "\n";
+  cout << "Extern: " << hypot(3, 4) << "\n";
 }

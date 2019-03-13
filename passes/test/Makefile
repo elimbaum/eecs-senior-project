@@ -1,12 +1,13 @@
 CC=clang
 CXX=clang++
-CFLAGS=-g3 -c
+CFLAGS=-g3 
 CPPFLAGS=`llvm-config --cxxflags` 
-COMPILE_LIB=$(CC) -c $< $(CFLAGS) $(CPPFLAGS) -o $@
+COMPILE_LIB=$(CC) $< $(CFLAGS) $(CPPFLAGS) -o $@
 
 all: libTestPass.so libTestPass.o
 
-libTestPass.so: EXTRA=-fPIC
+libTestPass.so: EXTRA=-fPIC -shared
+libTestPass.o:  EXTRA=-static -c
 
 libTestPass.*: test.cpp
 	$(COMPILE_LIB) $(EXTRA)

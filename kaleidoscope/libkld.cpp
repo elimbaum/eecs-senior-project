@@ -7,6 +7,6 @@ extern "C" double printd2(double X) {
 }
 
 extern "C" double _hyp(double x, double y) {
-  fprintf(stderr, "running replaced function...\n");
+  // fprintf(stderr, "running replaced function...\n");
   return hypot(x, y);
 }

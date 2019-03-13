@@ -153,12 +153,31 @@ static int gettok() {
       retval = tok_identifier;
   }
 
-  else if (isdigit(LastChar) || LastChar == '.') { // number
+  else if (isdigit(LastChar) || LastChar == '.') 
+  { // number
     std::string NumStr;
     do { 
       NumStr += LastChar;
       LastChar = reader.getchar();
     } while (isdigit(LastChar) || LastChar == '.');
+
+    // optional exponent
+    // buggy but it works
+    if (LastChar == 'e') {
+      std::string exp = "e";
+      LastChar = reader.getchar();
+      if (LastChar == '-' || LastChar == '+') {
+        exp += LastChar;
+        LastChar = reader.getchar();
+      }
+
+      while (isdigit(LastChar)) {
+        exp += LastChar;
+        LastChar = reader.getchar();
+      }
+
+      NumStr += exp;
+    }
 
     NumVal = strtod(NumStr.c_str(), 0);
     retval = tok_number;
@@ -238,6 +257,16 @@ public:
   VarExprAST(std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames,
              std::unique_ptr<ExprAST> Body)
     : VarNames(std::move(VarNames)), Body(std::move(Body)) {}
+
+  Value * codegen() override;
+};
+
+class VectorExprAST : public ExprAST {
+  std::vector<std::unique_ptr<ExprAST>> Elements;
+
+public:
+  VectorExprAST(std::vector<std::unique_ptr<ExprAST>> Elements)
+    : Elements(std::move(Elements)) {}
 
   Value * codegen() override;
 };
@@ -387,6 +416,23 @@ static std::unique_ptr<ExprAST> ParseParenExpr() {
 
   getNextToken(); // eat )
   return V;
+}
+
+static std::unique_ptr<ExprAST> ParseVectorExpr() {
+  getNextToken(); // eat [
+
+  std::vector<std::unique_ptr<ExprAST>> Elements;
+
+  while (CurTok != ']') {
+    auto V = ParseExpression();
+    if (!V)
+      return LogError("expected expression in list");
+
+    Elements.push_back(std::move(V));
+  }
+
+  getNextToken(); // eat ]
+  return llvm::make_unique<VectorExprAST>(std::move(Elements));
 }
 
 static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
@@ -584,6 +630,8 @@ static std::unique_ptr<ExprAST> ParsePrimary() {
     return ParseNumberExpr();
   case '(':
     return ParseParenExpr();
+  case '[':
+    return ParseVectorExpr();
   case tok_if:
     return ParseIfExpr();
   case tok_for:
@@ -608,7 +656,7 @@ static int GetTokPrecedence() {
 }
 
 static std::unique_ptr<ExprAST> ParseUnary() {
-  if (!isascii(CurTok) || CurTok == '(' || CurTok == ',')
+  if (!isascii(CurTok) || CurTok == '[' || CurTok == '(' || CurTok == ',')
     return ParsePrimary();
 
   int Opc = CurTok;
@@ -839,6 +887,14 @@ Value * VarExprAST::codegen() {
   return BodyVal;
 }
 
+Value * VectorExprAST::codegen() {
+  if (Elements.size() > 0) {
+    return Elements.back()->codegen();
+  } else {
+    return nullptr;
+  }
+}
+
 static void MainLoop(); 
 
 // JIT handles import.
@@ -863,9 +919,11 @@ Value * UnaryExprAST::codegen() {
     return nullptr;
 
   Function * F = getFunction(std::string("unary") + Opcode);
-  if (!F)
-    return LogErrorV("Unknown unary operator");
-
+  if (!F) {
+    std::string err = "Unknown unary operator: ";
+    err += Opcode;
+    return LogErrorV(err.c_str());
+  }
   return Builder.CreateCall(F, OperandV, "unop");
 }
 
@@ -900,6 +958,8 @@ Value * BinaryExprAST::codegen() {
     return Builder.CreateFSub(L, R, "subtmp");
   case '*':
     return Builder.CreateFMul(L, R, "multmp");
+  case '/':
+    return Builder.CreateFDiv(L, R, "divtmp");
   case '<':
     L =  Builder.CreateFCmpULT(L, R, "cmptmp");
     // convert bool to double (lang only supports double)
@@ -1181,7 +1241,7 @@ static void HandleTopLevelExpression() {
       double (*FP)() = nullptr;
       if (auto ExprAddr = ExprSymbol.getAddress()) {
         FP = (double(*)())*ExprAddr;
-        fprintf(stderr, "Evaluated to %f\n", FP());
+        fprintf(stderr, "Evaluated to %g\n", FP());
       } else {
         logAllUnhandledErrors(ExprAddr.takeError(), llvm::errs(), "kaleidoscope error: ");
         exit(1);
@@ -1258,6 +1318,7 @@ int main(int argc, char ** argv) {
   BinopPrecedence['+'] = 20;
   BinopPrecedence['-'] = 20;
   BinopPrecedence['*'] = 40;
+  BinopPrecedence['/'] = 40;
 
   reader.pushsource(stdin);
 
