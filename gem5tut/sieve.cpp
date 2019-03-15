@@ -19,19 +19,23 @@ int main(int argc, char ** argv) {
   vector<bool> sieve (UpperLimit);
 
   int MaxSearch = floor(sqrt(UpperLimit));
-  // printf("Primes less than %d (search up to %d)\n", UpperLimit, MaxSearch);
+  printf("Primes less than %ld (search up to %d)\n", UpperLimit, MaxSearch);
 
+  long nPrimes = 0;
   for (long a = 2; a <= MaxSearch; a++) {
     if (sieve[a]) continue;
 
-    for (long b = 2 * a; b <= UpperLimit; b += a) {
+    // start at square of prime!
+    nPrimes++;
+    for (long b = a * a; b <= UpperLimit; b += a) {
       sieve[b] = true;
     }
   }
 
-  // print pass
-  long nPrimes = 0;
-  for (long i = 2; i < UpperLimit; i++) {
+  printf("Counting...\n");
+
+  // count pass
+  for (long i = MaxSearch; i < UpperLimit; i++) {
     if (sieve[i]) continue;
     // found a prime!
     // printf("%d\n", i);

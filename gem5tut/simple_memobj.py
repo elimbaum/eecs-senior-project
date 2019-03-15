@@ -30,7 +30,9 @@ system.mem_ctrl.port = system.membus.master
 system.system_port = system.membus.slave
 
 process = Process()
-process.cmd = ['/home/fas/manohar/emb99/project/gem5/tests/test-progs/hello/bin/x86/linux/hello']
+# process.cmd = ['/home/fas/manohar/emb99/project/gem5/tests/test-progs/hello/bin/x86/linux/hello']
+# process.cmd = ['sieve', '10000']
+process.cmd = ['memtest', '0x10']
 system.cpu.workload = process
 system.cpu.createThreads()
 

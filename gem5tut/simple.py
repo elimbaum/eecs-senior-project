@@ -36,14 +36,15 @@ system.cpu.interrupts[0].int_slave = system.membus.master
 system.system_port = system.membus.slave
 
 # memory control
-system.mem_ctrl = DDR3_1600_8x8()
+system.mem_ctrl = DDR3_2133_8x8()
 system.mem_ctrl.range = system.mem_ranges[0] # as specified above
 system.mem_ctrl.port = system.membus.master # connect to bus
 
 # using example for tutorial, but any statically-compiled x86 exec would do!
 process = Process()
 # process.cmd = ['/home/eli/gem5/tests/test-progs/hello/bin/x86/linux/hello']
-process.cmd = ['sieve']
+# process.cmd = ['sieve', '10000']
+process.cmd = ['memtest', '0x7fffffffed03']
 system.cpu.workload = process
 system.cpu.createThreads()
 
