@@ -42,7 +42,8 @@ system.mem_ctrl.port = system.membus.master # connect to bus
 
 # using example for tutorial, but any statically-compiled x86 exec would do!
 process = Process()
-process.cmd = ['/home/fas/manohar/emb99/project/gem5/tests/test-progs/hello/bin/x86/linux/hello']
+# process.cmd = ['/home/eli/gem5/tests/test-progs/hello/bin/x86/linux/hello']
+process.cmd = ['sieve']
 system.cpu.workload = process
 system.cpu.createThreads()
 
