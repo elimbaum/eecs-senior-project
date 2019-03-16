@@ -44,7 +44,7 @@ system.mem_ctrl.port = system.membus.master # connect to bus
 process = Process()
 # process.cmd = ['/home/eli/gem5/tests/test-progs/hello/bin/x86/linux/hello']
 # process.cmd = ['sieve', '10000']
-process.cmd = ['memtest', '0x7fffffffed03']
+process.cmd = ['rui_test']
 system.cpu.workload = process
 system.cpu.createThreads()
 

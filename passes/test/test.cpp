@@ -18,17 +18,18 @@ namespace {
     TestPass() : FunctionPass(ID) {}
 
     bool runOnFunction(Function &F) {
-      if (F.getName() != "hyp")
+      errs() << "Running on " << F.getName() << "\n";
+      if (F.getName() != "cblas_ddot")
         return false;
 
-      // errs() << "Mutating!\n";
+      errs() << "Mutating!\n";
       
       LLVMContext& Ctx = F.getContext();
       std::vector<Type *> paramTypes = {Type::getDoubleTy(Ctx), Type::getDoubleTy(Ctx)};
       Type * retType = Type::getDoubleTy(Ctx);
 
       FunctionType * _funcType = FunctionType::get(retType, paramTypes, false);
-      FunctionCallee _func = F.getParent()->getOrInsertFunction("hypot", _funcType);
+      FunctionCallee _func = F.getParent()->getOrInsertFunction("_dot", _funcType);
       
       BasicBlock * mutBB = BasicBlock::Create(Ctx, "mutate", & F);
       IRBuilder<> builder(mutBB);
@@ -42,7 +43,7 @@ namespace {
       // run. dead code elim pass will remove this code.
       mutBB->moveBefore(& (F.getEntryBlock()));
 
-      // errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
+      errs() << "New: "; F.print(llvm::errs()); errs() << "\n";
       verifyFunction(F);
       return true;
     }

@@ -7,11 +7,17 @@ int main(int argc, char ** argv) {
   m.open("/dev/mem");
   m.seekg(strtol(argv[1], NULL, 0));
 
+  if (! m.good()) {
+    cout << "bad stream\n";
+    return 1;
+  }
+
   printf("req\n");
-  char q = m.get();
+  int q = m.get();
+  
   
   if (q < 0) {
-    perror("memtest");
+    perror("get char");
   } else {
     printf("Got %d!\n", q);
   }
