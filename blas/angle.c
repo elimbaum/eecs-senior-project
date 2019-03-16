@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
   char * in_line = NULL, * line_tmp;
   size_t in_pos;
   char * end;
-  int n_A = 0;
+  int prev_n = 0;
   int n = 0;
   double * x; // temp array
 
@@ -53,15 +53,15 @@ int main(int argc, char ** argv) {
       x = A;
       state = ST_B;
     } else if (state == ST_B) {
-      n_A = n; // save first length
+      prev_n = n; // save first length
       x = B;
       state = ST_SEP;
     } else { // ST_SEP
       if (line_tmp[0] == ';') {
-        // Compute dot product
-        if (n != n_A) {
-          DIE("%s: length mismatch on line %d: %d vs %d\n", infn, line_num, n_A, n);
+        if (n != prev_n) {
+          DIE("%s: length mismatch on line %d: %d vs %d\n", infn, line_num, prev_n, n);
         }
+        // Compute dot product
         printf("%f\n", acos(cblas_ddot(n, A, 1, B, 1) / (cblas_dnrm2(n, A, 1) * cblas_dnrm2(n, B, 1))));
         state = ST_A;
         continue;

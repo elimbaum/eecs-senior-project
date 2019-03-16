@@ -7,8 +7,8 @@ LDLIBS=-lopenblas -lpthread -lm
 angle.in: .FORCE;
 	./angle_gen.py > $@
 
-angle_s: angle.c
+%_s: %.c
 	$(CC) $< $(CFLAGS) $(LDLIBS) -static -o $@
 
-angle.ll: angle.c
+%.ll: %.c
 	$(CC) $< $(CFLAGS) -emit-llvm -S -o $@
