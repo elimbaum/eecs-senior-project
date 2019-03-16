@@ -4,7 +4,7 @@
 
 Advisor: Rajit Manohar
 
-## General TODO
+## Old TODO
 
 - [ ] read FPGA paper?
 - [x] read ADRES & other CGRA paper (dynamic translation!)
@@ -24,8 +24,12 @@ Advisor: Rajit Manohar
 
 - [ ] LLVM write up
 - [x] JIT
-  - [ ] get extern’d functions working again (`-rdynamic` no longer available)
-  - [ ] Will need to add arrays to kld. This involves using the notorious `getelementptr` instruction.
+  - [ ] get extern’d functions working with static (`-rdynamic` no longer available)
+  - [x] function substitution
+  - [ ] globals
+  - [ ] Add arrays. This involves using the notorious `getelementptr` instruction.
+  - [ ] fix invalid expressions error propagation
+  - [x] add scientific notation input
 - [ ] BLAS
 - [ ] add hardware feature in gem5
   - [ ] MMIO – JIT substitutes a function call with pointers?
@@ -145,15 +149,51 @@ For now, just name matching. Each argument is itself an ExprAST.
 
 **changed this in meeting:** operate on JIT IR, not AST.
 
-trying to get extern’d functions working.
+trying to get extern’d functions working. still no luck static.
+
+Now I have an LLVM “pass” running when each function is added to the JIT. Looking at function inline example (`Transforms/IPO/Inline.cpp`) to see approximately how this is done. looks like the modification is done via callgraph api. ok, maybe this is complicated. llvm::InlineFunction? maybe create a new BB
+
+this website looks promising: https://www.cs.cornell.edu/~asampson/blog/llvm.html
+
+Hello pass wasn’t linking because there’s a header file that force-links all the existing passes.
+
+By inserting block in front of previous entry block, optimizer removes rest of the function!
+
+Now I’m running into ABI Breaking issues again! Maybe because of that one build i tried and now everything is fucked. Trying to delete ~/llvm and build/ and recompile. omg, i just had to recompile the pass.
+
+ok…. so kaleidoscope isn’t really needed here. I learned a lot but I learned more from the cornell website… I feel like I kinda wasted my time on this.
+
+### kaleidoscope
+
+does it make sense to use custom JIT, versus hacking on LLI? I like kld. LLI isn’t working on C++.
+
+Change everything over to lists? like racket. function arguments will natively be lists. to pass list as argument, need a singleton list with that list as its only element.
+
+gotta fix parsing errors on lists...
 
 ### Moving to AVLSI Server
 
 hopefully a permanent home. config files moved over. reinstalling LLVM & gem5. Now I actually have root access, hallelujah. compiler works!
 
-need to reinstall the x86 full system files.
+need to reinstall the x86 full system files. i should try this still.
 
-## FU Notes
+### gem5
+
+running FS. Had to create a 1GB swap file. My custom run file does not support checkpoint! I can run static executables in simulation, but need to get dynamic working. Now it looks like the gem5 kernel is too old! My code supports linux kernel 2.6.32+, while gem5 is running 2.6.22.
+
+I might need to upgrade kernel, from kernel.org. Getting an old one: 3.16.63 longterm. gem5 has [instructions](http://gem5.org/Linux_kernel) for making. Accepting all defaults? idk. lets see what happens! that may have worked. not doing anything.
+
+plan: redo gem5 tutorial. try to get C code accessing IO 
+
+Can access physical addresses from memory object. However, virtual addresses in program. Need to hack into TLB? or is that what mmap was for? mmap!!! whoever is doing virtual->physical. mmap is for mapping files/devices into memory. I could make a device. that’s creating the branch point at the OS level, not the chip level. it’s an idea.
+
+But I do need some way of getting the virtual mapping. So maybe I do need OS-level assistance.
+
+`mmap` with `/dev/mem` AHA! or `/dev/port` whichever works. but there we go! Now just need to get FS mode working...
+
+trying to create new disk, per [this tutorial](http://www.lowepower.com/jason/creating-disk-images-for-gem5.html). nope, that didn’t work. now trying an [updated version](http://www.lowepower.com/jason/setting-up-gem5-full-system.html).  gotta install qemu as well?? KVM not enabled, and can’t boot anything.
+
+### FU Notes
 
 Creating the FU. How many functions to do? Look at a couple:
 
@@ -244,6 +284,66 @@ defproc saxpy(aN1of2<B> a; aN1of2<B> x[N]; aN1of2<B> y[N];
 neat.
 
 (now just have to figure out the B-width operators themselves…) and also sqrt.
+
+**not doing this in ACT, but instead in gem5!**
+
+### New FU Notes
+
+Still have to figure out how timing will work. These operations will have variable latency based on length of input vector. This C++ code is run by the *host* system, not in the simulated CPU itself.
+
+
+
+```C++
+void MAC(double * a, double b, double c) {
+	*a += b * c;
+}
+```
+
+```c++
+// arguments are passed by MMIO. answer return in memory
+// M is fixed, number of MAC units available.
+void dot(int N, double * A, double * B) {
+    double r[M];
+    
+    for(i = 0; i < N / M + 1; i++) {
+        for (j = 0; j < M; j++) {
+            // break, or could pad with zeros...
+            if (M * i + j >= N) break;
+            
+            // these would run in parallel
+			MAC(& r[j], A[M * i + j], B[M * i + j]);
+        }
+    }
+    
+    // Sum r[j]
+    // This can also be a MAC
+    for (j = 1; j < M; j++) {
+        MAC(& r[0], r[j], 1);
+    }
+    
+    // return dot product in A[0]
+    A[0] = r[0];
+}
+```
+
+Using babylonian sqrt algorithm for norm:
+
+precision can be fixed, or set by log of S.
+
+```C++
+void norm(int N, double * A) {
+    dot(N, A, A);
+    double S = A[0];
+    double x = S / 2;
+    
+    for (i = 0; i < precision; i++) {
+        MAC(x, S, 1/x);
+        MAC(x, x, -1/2);
+    }
+}
+```
+
+
 
 ## Meeting Notes
 
@@ -616,6 +716,10 @@ Had to add .h file for Hello pass, and a `createHelloPass` to call from within k
 
 CMakeLists had to be updated to also install it in ~/llvm. However, now for some reason, it can’t find the create function. Looks like it’s not in the shared object. So somehow not getting compiled...
 
+Idea for this afternoon: run cmake verbose, figure out how Hello.cpp is being compiled, and why the function is disappearing before it gets to the so. 
+
+Hello.exports, empty file, is required? Required by CMakeLists. removing, and everything compiles, and the symbol is there! LD_LIBRARY_PATH to get it to work. However, this making a shared object. all the other LLVM libs are being statically linked in – will have to figure out how to change that. Aha! I had written `MODULE` in CMakeLists. removing it links it with everything else statically. cool. Ok, well still not being *included* with everything else, so I do have to explicitly link it. But that’s ok.
+
 ### LLVM Codegen
 
 https://www.llvm.org/docs/CodeGenerator.html or https://releases.llvm.org/6.0.1/docs/CodeGenerator.html
@@ -666,7 +770,7 @@ I don't really want to do VNC.
 
 Trouble launching interactive sessions: because maintenance falls within my default 7-day allocation.
 
-### gem5
+### gem5 Tutorial
 
 I will use gem5 to simulate an ARM CPU. (wait, ARM? - 27 Feb)
 
@@ -734,3 +838,72 @@ PARSEC instructions are out of date and confusing. Going to skip it. However, th
 
 http://llvm.org/docs/GetElementPtr.html
 
+Not sure if I’ll be needing this now, but I still want to know about it.
+
+GEP only does address calculation, no memory access. this is also making pointer dereferencing very explicit. Causes seemingly superfluous zero-indexes for single elements.
+
+`getelementptr <type>, <start addr> <offset>...`
+
+GEP must access memory, so sometimes compound accesses must be broken up if you have double pointers, perhaps? Accessing the 0th element with GEP *does not change the location, but does change the type.*
+
+The summary is good:
+
+1. *The GEP instruction **never accesses memory**, it only provides pointer computations.*
+2. *The second operand to the GEP instruction is **always a pointer and it must be indexed***.*
+3. *There are no superfluous indices for the GEP instruction.*
+4. *Trailing zero indices are superfluous for pointer aliasing, but not for the types of the pointers.*
+5. *Leading zero indices are not superfluous for pointer aliasing nor the types of the pointers.*
+
+### LLVM for Grad Students
+
+https://www.cs.cornell.edu/~asampson/blog/llvm.html
+
+LLVM is used by apple to make deployment of apps easy!
+
+LLVM is a compiler but doesn’t have to be *just* used as a compiler.
+
+Module = also has instructions for building a pass outside of source tree. lol, this is very helpful. (actually, not sure if building out of source tree will work for JIT, but I can always specifically link, doesn’t have to be built into clang)
+
+skeleton pass: does nothing, but has good CMake, setup reference. function pas is invoked for every function we try to compile (or JIT).
+
+Module = file; house Functions; house BasicBlocks. Remember, to print IR, `clang -emit-llvm -S -o - file.cpp `
+
+Back in the same compilation rut. ugh. symbol is not being copied into the file. oh, just wasn’t keeping the file updated… :/ i hate compilers
+
+mutate is so simple! had to change `Mul` to `FMul` because kld only uses float math.
+
+**TODO:** make magic functions in TestPass to turn on/off substitution. of course, this will only apply to functions added after… maybe doesn’t make sense. tbd tomorrow.
+
+BasicBlock has a `setParent(Function)`. So to replace call… delete, set parent.
+
+This is amazing!
+
+Function calls are slow. Should not be using these – inline load/store if possible.
+
+### gem5 considered harmful
+
+http://research.cs.wisc.edu/vertical/papers/2014/wddd-sim-harmful.pdf
+
+lol. linked from “LLVM for Grad Students”
+
+LLVM is Front End (C => IR) + Passes (IR => IR) + Back end (IR => machine)
+
+This would be good to bring up in presentation/paper as pitfalls.
+
+### LLVM Programmer’s Manual
+
+http://llvm.org/docs/ProgrammersManual.html
+
+I can’t believe I haven’t saved this yet! Very useful general page. Should just skim it for now, and then come back as reference.
+
+#### Statistics
+
+Are very useful. May even supplant my usage of gem5… **but require LLVM compiled with assertions on**. Tried this, and with stats on, no luck. I can add the pass but not sure how to get it to print. might have to call a print function. `PrintStatistics()` in stats header file doesn’t work.
+
+### gem5 101
+
+http://gem5.org/Gem5_101
+
+maybe this will be good for me
+
+can’t build C file statically??? C++ works. use bit vector, not array.
