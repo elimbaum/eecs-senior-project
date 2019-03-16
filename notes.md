@@ -193,7 +193,7 @@ But I do need some way of getting the virtual mapping. So maybe I do need OS-lev
 
 trying to create new disk, per [this tutorial](http://www.lowepower.com/jason/creating-disk-images-for-gem5.html). nope, that didn’t work. now trying an [updated version](http://www.lowepower.com/jason/setting-up-gem5-full-system.html).  gotta install qemu as well?? KVM not enabled, and can’t boot anything.
 
-### FU Notes
+### OLD FU Notes
 
 Creating the FU. How many functions to do? Look at a couple:
 
@@ -289,9 +289,9 @@ neat.
 
 ### New FU Notes
 
-Still have to figure out how timing will work. These operations will have variable latency based on length of input vector. This C++ code is run by the *host* system, not in the simulated CPU itself.
+Still have to figure out how timing will work. These operations will have variable latency based on length of input vector. This C++ code is run by the *host* system, not in the simulated CPU itself, as a substitute for actually simulating the hardware
 
-
+Might want to pad all inputs to be a multiple of M, the number of MAC units available for that computation. none of the functions i’m working with, at least, will care about that. couple of extra adds for dot, i guess.
 
 ```C++
 void MAC(double * a, double b, double c) {
@@ -334,16 +334,48 @@ precision can be fixed, or set by log of S.
 void norm(int N, double * A) {
     dot(N, A, A);
     double S = A[0];
-    double x = S / 2;
+    double x = 0;
+    MAC(x, S, 1/2); // initial estimate - S/2
     
     for (i = 0; i < precision; i++) {
         MAC(x, S, 1/x);
         MAC(x, x, -1/2);
     }
+    A[0] = x;
 }
 ```
 
+```c++
+void scal(int N, double * A, double k) {
+    // increment by k - 1 === multiply by k
+    double q = k - 1;
+    // ??? MAC(k, -1, 1);
+    for(i = 0; i < N / M + 1; i++) {
+        for (j = 0; j < M; j++) {
+            if (M * i + j >= N) break; 
+			MAC(& A[M * i + j], A[M * i + j], q);
+        }
+    }
+    // result in A
+}
+```
 
+```c++
+void saxpy(int N, double * A, double * B, double k) {
+    for(i = 0; i < N / M + 1; i++) {
+        for (j = 0; j < M; j++) {
+            if (M * i + j >= N) break; 
+            // B = B + A * k
+			MAC(& B[M * i + j], A[M * i + j], k);
+        }
+    }
+    // result in B
+}
+```
+
+To measure latency, could check # of calls to MAC (/ by number of MACs?). Not sure how to handle concurrency. Or could create some kind of concurrency model. Also haven’t figured out the shared memory yet. These pointers are passed in by MMIO, but how is the information accessed from there?
+
+I’m thinking all constants (N, as well as constant multipliers) can just be passed by value via MMIO. Not sure about returns. dot and norm might as well return to MMIO… speed won’t be the limiting factor there, and MMIO might make more sense for the program.
 
 ## Meeting Notes
 
