@@ -29,7 +29,7 @@ namespace {
           // test with hypot
           auto * oldF = call->getCalledFunction();
           if (oldF->getName() != "hypot") continue;
-          
+
           IRBuilder<> builder(call);
           builder.SetInsertPoint(call->getParent(), ++builder.GetInsertPoint());
 
