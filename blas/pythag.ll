@@ -25,7 +25,7 @@ define dso_local i32 @main(i32, i8**) #0 !dbg !10 {
 
 ; <label>:10:                                     ; preds = %51, %2
   %11 = load i32, i32* %6, align 4, !dbg !24
-  %12 = icmp sle i32 %11, 100, !dbg !26
+  %12 = icmp sle i32 %11, 50, !dbg !26
   br i1 %12, label %13, label %54, !dbg !27
 
 ; <label>:13:                                     ; preds = %10

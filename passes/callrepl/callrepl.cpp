@@ -34,6 +34,7 @@ namespace {
           builder.SetInsertPoint(call->getParent(), ++builder.GetInsertPoint());
 
           // create a new call (can't reuse old one, because replace will mess up)
+          // in real system, this will probably be a load/store pair
           auto * newCall = builder.Insert(call->clone());
           // add 1
           Value * add = builder.CreateFAdd(newCall, ConstantFP::get(Ctx, APFloat(1.0)));
