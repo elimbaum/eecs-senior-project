@@ -193,6 +193,20 @@ But I do need some way of getting the virtual mapping. So maybe I do need OS-lev
 
 trying to create new disk, per [this tutorial](http://www.lowepower.com/jason/creating-disk-images-for-gem5.html). nope, that didn’t work. now trying an [updated version](http://www.lowepower.com/jason/setting-up-gem5-full-system.html).  gotta install qemu as well?? KVM not enabled, and can’t boot anything.
 
+This website is promising: http://www.mariobadr.com/updating-the-gem5-linux-kernel-for-x86.html Currently booting. Success!
+
+To mount the disk:
+
+```
+sudo mount -o loop,offset=32256 ~/gem5/disks/linux-x86.img ~/mnt
+```
+
+Not sure why that’s the offset, but it works. Then, `chroot ~/mnt bash` to effectively run a system within the disk image. lli won’t run – may well have to recompile. lol. need more space on disk image!! had to use `resize2fs` to actually expand the filesystem (at the mounted loop device `/dev/loop1`). Now trying to compile llvm...
+
+can’t compile LLVM, because barebones system doesn’t have Cmake. And cmake requires C++11. welcome back to hell.
+
+FS also seems broken, as far as gem5 is concerned. can’t `cd` into new directories. might be a FS issue – making directories on host system `ext4` vs target `ext2`, not sure if that’ll cause a problem. Maybe adding files is ok, directories is not. In that case, disable copy-on-write in simulator? bit worried about FS corruption...
+
 ### OLD FU Notes
 
 Creating the FU. How many functions to do? Look at a couple:
@@ -293,6 +307,8 @@ Still have to figure out how timing will work. These operations will have variab
 
 Might want to pad all inputs to be a multiple of M, the number of MAC units available for that computation. none of the functions i’m working with, at least, will care about that. couple of extra adds for dot, i guess.
 
+Not sure if I actually need to be insane about MAC usage. Simple operations like half and minus one can probably just be hardwired…
+
 ```C++
 void MAC(double * a, double b, double c) {
 	*a += b * c;
@@ -329,6 +345,8 @@ void dot(int N, double * A, double * B) {
 Using babylonian sqrt algorithm for norm:
 
 precision can be fixed, or set by log of S.
+
+only issue with calling dot is that this might do two loads from cache. or would it? recent cache hit should be pretty fast, after all.
 
 ```C++
 void norm(int N, double * A) {
