@@ -20,7 +20,7 @@ main(int argc, char * argv[])
   size_t length;
   ssize_t s;
 
-  getchar();
+  // getchar();
 
   if (argc != 3) {
     fprintf(stderr, "%s offset length\n", argv[0]);
@@ -32,11 +32,11 @@ main(int argc, char * argv[])
     handle_error("open");
 
   offset = strtol(argv[1], NULL, 0);
-  // offset must be page aligned
+  // mmap offset must be page aligned
   pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
 
-  if (offset != pa_offset)
-    fprintf(stderr, "warning: offsets must be page aligned (was %lx, now %lx)\n", offset, pa_offset);
+  // if (offset != pa_offset)
+  //  fprintf(stderr, "warning: offsets should be page aligned (was %lx, now %lx)\n", offset, pa_offset);
 
   length = strtol(argv[2], NULL, 0);
 
@@ -46,6 +46,7 @@ main(int argc, char * argv[])
     handle_error("mmap");
 
   // READ to stdout
+  // take pa_offset into account to access proper location
   s = write(STDOUT_FILENO, addr + offset - pa_offset, length);
   if (s != length) {
     if (s == - 1)

@@ -1,0 +1,7 @@
+Import ('*')
+
+SimObject('MMIOFU.py')
+Source('mmio_fu.cc')
+
+DebugFlag('MMIOFU', "General FU debugging")
+

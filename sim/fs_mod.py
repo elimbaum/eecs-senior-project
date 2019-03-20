@@ -52,11 +52,11 @@ from m5.objects import *
 from m5.util import addToPath, fatal, warn
 from m5.util.fdthelper import *
 
-addToPath('../')
+addToPath('/home/eli/gem5/configs')
 
 from ruby import Ruby
 
-from common.FSConfig import *
+from FSConfig_mod import *
 from common.SysPaths import *
 from common.Benchmarks import *
 from common import Simulation
@@ -177,18 +177,15 @@ def build_test_system(np):
                 cpu.interrupts[0].int_slave = test_sys.ruby._cpu_ports[i].master
 
     else:
-        test_sys.memobj = SimpleMemobj()
         if options.caches or options.l2cache:
             # By default the IOCache runs at the system clock
             test_sys.iocache = IOCache(addr_ranges = test_sys.mem_ranges)
             test_sys.iocache.cpu_side = test_sys.iobus.master
-            test_sys.iocache.mem_side = test_sys.memobj.data_port # test_sys.membus.slave
+            test_sys.iocache.mem_side = test_sys.membus.slave
         elif not options.external_memory_system:
             test_sys.iobridge = Bridge(delay='50ns', ranges = test_sys.mem_ranges)
             test_sys.iobridge.slave = test_sys.iobus.master
-            test_sys.iobridge.master = test_sys.memobj.data_port # test_sys.membus.slave
-
-        test_sys.memobj.mem_side = test_sys.membus.slave
+            test_sys.iobridge.master = test_sys.membus.slave
 
         # Sanity check
         if options.simpoint_profile:

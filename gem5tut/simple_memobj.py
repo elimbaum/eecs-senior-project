@@ -32,7 +32,7 @@ system.system_port = system.membus.slave
 process = Process()
 # process.cmd = ['/home/fas/manohar/emb99/project/gem5/tests/test-progs/hello/bin/x86/linux/hello']
 # process.cmd = ['sieve', '10000']
-process.cmd = ['/home/eli/sproj-git/gem5tut/mmap_test', '0xFE000', '128']
+process.cmd = ['/home/eli/sproj-git/gem5tut/mmap_test', '0xFFFF00000', '8']
 system.cpu.workload = process
 system.cpu.createThreads()
 
