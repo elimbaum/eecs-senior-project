@@ -20,6 +20,8 @@ main(int argc, char * argv[])
   size_t length;
   ssize_t s;
 
+  getchar();
+
   if (argc != 3) {
     fprintf(stderr, "%s offset length\n", argv[0]);
     exit(EXIT_FAILURE);
