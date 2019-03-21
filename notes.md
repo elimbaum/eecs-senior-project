@@ -23,17 +23,12 @@ Advisor: Rajit Manohar
 ## Project TODO
 
 - [ ] LLVM write up
-- [x] JIT
-  - [ ] get extern’d functions working with static (`-rdynamic` no longer available)
-  - [x] function substitution
-  - [ ] globals
-  - [ ] Add arrays. This involves using the notorious `getelementptr` instruction.
-  - [ ] fix invalid expressions error propagation
-  - [x] add scientific notation input
-- [ ] BLAS
+- [x] BLAS
 - [ ] add hardware feature in gem5
-  - [ ] MMIO – JIT substitutes a function call with pointers?
+  - [x] MMIO – JIT substitutes a function call with pointers?
+  - [ ] Determine protocol for sending commands/receiving data
   - [ ] shared memory
+  - [ ] blocking read until results ready
 
 
 ## Important Dates
@@ -207,6 +202,38 @@ can’t compile LLVM, because barebones system doesn’t have Cmake. And cmake r
 
 FS also seems broken, as far as gem5 is concerned. can’t `cd` into new directories. might be a FS issue – making directories on host system `ext4` vs target `ext2`, not sure if that’ll cause a problem. Maybe adding files is ok, directories is not. In that case, disable copy-on-write in simulator? bit worried about FS corruption...
 
+i screwed it up, in my fucking around. redownloading the image; i’ll just add my one exec script and then leave. new guy looks nice. back to mmap. nope, that didn’t fix it.
+
+Trying to allow writes on disk. However, [disk image page](http://gem5.org/Disk_images) looks like it would require me to assemble my own disk image – don’t want that. 
+
+**GOAL:** get the goddamn exec script working. Would be nice to have easier mass file transfers.
+
+I think `m5 checkpoint`, maybe with the disk setup changes, does the trick.
+
+working on the memory unit. cache is probably a better model than the simple memobj.
+
+it works! hypot test (only MMIO, no LLVM) working perfectly.
+
+*on latency:* latency scheduling seems like it was done before hand. perhaps i could reschedule something, based on my estimate of how long the computation will take (it might not be constant time in something that i’ll know at schedule time, but maybe).
+
+### mmap
+
+reading mmap man page. then will start reserving IO, etc.
+
+`sysconf(_SC_PAGE_SIZE)` is 4096. oh, that’s on vlsi. But also 4096 on simulated system. (so multiples of 0x1000)
+
+mmap does *not* guarantee immediate writes to file. If I need to force a change to the physical memory system, `msync` can do that.
+
+Confused about `MAP_ANONYMOUS` – is that for mapping to physical memory? Unclear what the actual mapping being created would be, if there’s no backing file.
+
+From test program – bit confused how the memory space works. doesn’t necessarily seem like it’s mapping on to the physical memory entries laid out in the fs config file. Idea: just scan everything.
+
+don’t really know what to do here. just pick a random address? simplememobj can’t see it! gdb actually works! use getchar to wait for gdb (and run `file XXX`). annoying infinite memory loop but it works. however, can’t detect anything on the memory front. is this in front of cache? yes, almost definitely, unless on-chip cache. didn’t see any memory addresses that make sense! is mmap lying to me?
+
+IO Bus is working!! had to modify FS config file. Now I can be more specific – XBar, only certain addresses. For later: how to get the FU talking to shared memory?
+
+IO Bus is now *really* working. Connected the FU into the bus, reading off its address range! for later: probably should change MMIOFU semantics to primary/secondary or smth.
+
 ### OLD FU Notes
 
 Creating the FU. How many functions to do? Look at a couple:
@@ -333,6 +360,8 @@ void dot(int N, double * A, double * B) {
     
     // Sum r[j]
     // This can also be a MAC
+    // Might be faster to just be a direct sum?
+    // But granted M is small.
     for (j = 1; j < M; j++) {
         MAC(& r[0], r[j], 1);
     }
@@ -342,9 +371,9 @@ void dot(int N, double * A, double * B) {
 }
 ```
 
-Using babylonian sqrt algorithm for norm:
+Using babylonian sqrt algorithm for norm. precision can be fixed, or set by log of S? Looking into this. But it’s very accurate. Might actually scale with ln(S). oH yes. with each iteration, the distance is halved… logarithmic. stack overflow gives $\log(|n-\sqrt{n}|/\epsilon)$. that math doesn’t totally work out, but that’s actually asymptotically  $\log(n)$.
 
-precision can be fixed, or set by log of S.
+Interesting: $\ln(x)=\lg(x)\ln(2)$ so $\lceil \ln(x)\rceil\approx\lceil lg(x)\rceil\ln(2)$ and ceil of binary log is just bit len or so… huge. bitlen • 0.693. for float, this is the exponent value, apparently. edge cases here near bit boundaries, but whatever. this is a precision estimate. already going to be pretty close.
 
 only issue with calling dot is that this might do two loads from cache. or would it? recent cache hit should be pretty fast, after all.
 
