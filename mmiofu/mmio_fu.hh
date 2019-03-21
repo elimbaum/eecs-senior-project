@@ -51,8 +51,11 @@ class MMIOFU : public MemObject
 
     bool handleRequest(PacketPtr pkt);
     bool handleResponse(PacketPtr pkt);
+    void sendResponse(PacketPtr pkt);
 
     void handleFunctional(PacketPtr pkt);
+    void accessTiming(PacketPtr pkt);
+    bool accessFunctional(PacketPtr pkt);
     AddrRangeList getAddrRanges() const;
     void sendRangeChange();
 

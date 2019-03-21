@@ -674,6 +674,9 @@ def makeLinuxX86System(mem_mode, numCPUs=1, mdesc=None, Ruby=False,
             size='%dB' % (0xC0000000 - self.mem_ranges[0].size()),
             range_type=2))
 
+    # Reserve a page for MMIO FU
+    entries.append(X86E820Entry(addr=0xFFFEF000, size='4kB', range_type=2))
+
     # Reserve the last 16kB of the 32-bit address space for the m5op interface
     entries.append(X86E820Entry(addr=0xFFFF0000, size='64kB', range_type=2))
 

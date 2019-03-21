@@ -39,8 +39,12 @@ MMIOFU::CPUSidePort::sendPacket(PacketPtr pkt)
 {
   panic_if(blockedPacket != nullptr, "Should never try to send if blocked!");
 
+  DPRINTF(MMIOFU, "Sending %s to CPU\n", pkt->print());
   if (! sendTimingResp(pkt)) {
     blockedPacket = pkt;
+    DPRINTF(MMIOFU, "Couldn't send\n");
+  } else {
+    DPRINTF(MMIOFU, "Sent!\n");
   }
 }
 
@@ -129,8 +133,11 @@ MMIOFU::handleRequest(PacketPtr pkt)
 
   DPRINTF(MMIOFU, "Request for addr  %#x\n", pkt->getAddr());
   blocked = true;
-
-  memPort.sendPacket(pkt);
+  
+  // memPort.sendPacket(pkt);
+  schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
+                                   name() + ".accessEvent", true),
+           clockEdge(Cycles(1)));
   return true;
 }
 
@@ -139,18 +146,48 @@ MMIOFU::handleResponse(PacketPtr pkt)
 {
   assert(blocked);
   DPRINTF(MMIOFU, "Response for addr %#x\n", pkt->getAddr());
-  blocked = false;
+  // blocked = false;
 
-  cpuPort.sendPacket(pkt);
-  cpuPort.trySendRetry(); // might need retry
-
+  // cpuPort.sendPacket(pkt);
+  // cpuPort.trySendRetry(); // might need retry
+  sendResponse(pkt);
   return true;
+}
+
+void
+MMIOFU::sendResponse(PacketPtr pkt)
+{
+  assert(blocked);
+  DPRINTF(MMIOFU, "  sending response\n");
+  blocked = false;
+  cpuPort.sendPacket(pkt);
+  cpuPort.trySendRetry();
 }
 
 void
 MMIOFU::handleFunctional(PacketPtr pkt)
 {
-  memPort.sendFunctional(pkt);
+  if (accessFunctional(pkt)) {
+    pkt->makeResponse();
+  } else {
+    memPort.sendFunctional(pkt);
+  }
+}
+
+void
+MMIOFU::accessTiming(PacketPtr pkt)
+{
+  DPRINTF(MMIOFU, "AT / packet: %s\n", pkt->print());
+  pkt->setData((uint8_t *)"HELLO!");
+  pkt->makeResponse();
+  sendResponse(pkt);
+  DPRINTF(MMIOFU, "end of AT\n");
+}
+
+bool
+MMIOFU::accessFunctional(PacketPtr pkt)
+{
+  panic("Functional unimplemented!");
 }
 
 AddrRangeList
