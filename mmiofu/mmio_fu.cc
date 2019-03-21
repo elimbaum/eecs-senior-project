@@ -158,7 +158,6 @@ void
 MMIOFU::sendResponse(PacketPtr pkt)
 {
   assert(blocked);
-  DPRINTF(MMIOFU, "  sending response\n");
   blocked = false;
   cpuPort.sendPacket(pkt);
   cpuPort.trySendRetry();
@@ -174,11 +173,26 @@ MMIOFU::handleFunctional(PacketPtr pkt)
   }
 }
 
+#define BASE_ADDR 0xFFFEF000
+double A, B;
+
 void
 MMIOFU::accessTiming(PacketPtr pkt)
 {
   DPRINTF(MMIOFU, "AT / packet: %s\n", pkt->print());
-  pkt->setData((uint8_t *)"HELLO!");
+
+  if (pkt->getAddr() == BASE_ADDR + 0 * sizeof(double)) {
+    pkt->writeDataToBlock((uint8_t *) &A, (int)sizeof(double));
+    DPRINTF(MMIOFU, "Got A: %d\n", A);
+  } else if (pkt->getAddr() == BASE_ADDR + 1 * sizeof(double)) {
+    pkt->writeDataToBlock((uint8_t *) &B, (int)sizeof(double));
+    DPRINTF(MMIOFU, "Got B: %d\n", B);
+  } else if (pkt->getAddr() == BASE_ADDR + 2 * sizeof(double)) {
+    double C = sqrt(A * A + B * B);
+    pkt->setDataFromBlock((uint8_t *) &C, (int)sizeof(double));
+    DPRINTF(MMIOFU, "Sent C: %d\n", C);
+  }
+    
   pkt->makeResponse();
   sendResponse(pkt);
   DPRINTF(MMIOFU, "end of AT\n");
