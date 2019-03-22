@@ -17,6 +17,17 @@ namespace {
     static char ID;
     CallReplPass() : FunctionPass(ID) {}
 
+    bool doInitialization(Module &M) {
+      // TODO may only want to create this if any relevant functions are called
+      LLVMContext& Ctx = M.getContext();
+      IRBuilder<> builder(Ctx);
+      // create call to mmap
+      builder.CreateCall(M.getOrInsertFunction("map_io_mem", Type::getVoidTy(Ctx)));
+      // TODO save virtual pointer in global?
+      // TODO if mapping goes wrong at any point, fall back to original function
+      return true;
+    }
+
     bool runOnFunction(Function &F) {
       LLVMContext& Ctx = F.getContext();
 
@@ -32,6 +43,11 @@ namespace {
 
           IRBuilder<> builder(call);
           builder.SetInsertPoint(call->getParent(), ++builder.GetInsertPoint());
+
+          // store first arg
+          // store second arg
+          // load result (can be instantaneous on in-order CPU)
+          // need adds for array acces! NO, use GEP!
 
           // create a new call (can't reuse old one, because replace will mess up)
           // in real system, this will probably be a load/store pair

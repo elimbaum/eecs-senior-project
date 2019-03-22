@@ -60,10 +60,10 @@ int main(int argc, char * argv[])
   printf("Finished writing data; reading\n");
 
   double C = io_map[2];
-  printf("%G %G => %G (libm: %G)\n", A, B, C, hypot(A, B));
+  printf("%g %g => %g (libm: %g)\n", A, B, C, hypot(A, B));
 
   munmap(io_map, IO_PAGE_LEN);
-  exit(EXIT_FAILURE);
+  exit(EXIT_SUCCESS);
 }
 
 

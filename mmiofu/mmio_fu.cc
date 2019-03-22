@@ -137,7 +137,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
   // memPort.sendPacket(pkt);
   schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
                                    name() + ".accessEvent", true),
-           clockEdge(Cycles(1)));
+           clockEdge(Cycles(5)));
   return true;
 }
 
@@ -188,6 +188,7 @@ MMIOFU::accessTiming(PacketPtr pkt)
     pkt->writeDataToBlock((uint8_t *) &B, (int)sizeof(double));
     DPRINTF(MMIOFU, "Got B: %d\n", B);
   } else if (pkt->getAddr() == BASE_ADDR + 2 * sizeof(double)) {
+    // do the computation!
     double C = sqrt(A * A + B * B);
     pkt->setDataFromBlock((uint8_t *) &C, (int)sizeof(double));
     DPRINTF(MMIOFU, "Sent C: %d\n", C);
