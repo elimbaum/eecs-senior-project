@@ -10,7 +10,11 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
+#include "fu_mmap.h"
+
 using namespace llvm;
+
+extern char * _io_map;
 
 namespace {
   struct CallReplPass : public FunctionPass {
@@ -19,10 +23,9 @@ namespace {
 
     bool doInitialization(Module &M) {
       // TODO may only want to create this if any relevant functions are called
-      LLVMContext& Ctx = M.getContext();
-      IRBuilder<> builder(Ctx);
+      // LLVMContext& Ctx = M.getContext();
       // create call to mmap
-      builder.CreateCall(M.getOrInsertFunction("map_io_mem", Type::getVoidTy(Ctx)));
+      // Constant * mapFunc = M.getOrInsertFunction("_create_io_map", Type::getInt32Ty(Ctx));
       // TODO save virtual pointer in global?
       // TODO if mapping goes wrong at any point, fall back to original function
       return true;
@@ -31,6 +34,16 @@ namespace {
     bool runOnFunction(Function &F) {
       LLVMContext& Ctx = F.getContext();
 
+      if (F.getName() == "main") {
+        errs() << "Trying to create initial map...\n";
+        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", Type::getInt32Ty(Ctx));
+        // Make this the first line of main (first front gets BB, second gets Inst)
+        IRBuilder<> builder(& F.front().front());
+        builder.CreateCall(mapFunc);
+        verifyFunction(F);
+        errs() << "Created map call\n";
+      }
+
       for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
         if (auto * call = dyn_cast<CallInst>(&*I)) {
           // only look at cblas functions
@@ -38,7 +51,7 @@ namespace {
           //  continue;
 
           // test with hypot
-          auto * oldF = call->getCalledFunction();
+          Function * oldF = call->getCalledFunction();
           if (oldF->getName() != "hypot") continue;
 
           IRBuilder<> builder(call);
@@ -51,20 +64,36 @@ namespace {
 
           // create a new call (can't reuse old one, because replace will mess up)
           // in real system, this will probably be a load/store pair
-          auto * newCall = builder.Insert(call->clone());
+          Constant * io_map = F.getParent()->getOrInsertGlobal("_io_map", Type::getInt8Ty(Ctx));
+          Value * io_map_d = builder.CreateBitCast(io_map, Type::getDoublePtrTy(Ctx), "_io_map_d");
+          
+          std::vector<Value *> idx_list(1);
+          idx_list[0] = ConstantInt::get(Ctx, APInt(32, 1 /*sizeof(double)*/, true));
+
+          Value * A = io_map_d; // builder.CreateBitCast(io_map, Type::getDoublePtrTy(Ctx));
+          // Value * B = builder.CreateBitCast(
+          //               builder.CreateInBoundsGEP(io_map, idx_list),
+          //               Type::getDoublePtrTy(Ctx));
+          Value * B = builder.CreateInBoundsGEP(Type::getDoubleTy(Ctx), io_map_d, idx_list);
+          auto arg = call->arg_begin();
+          builder.CreateStore(arg->get(), A);
+          arg++; // next arg
+          builder.CreateStore(arg->get(), B);
+            
+          // auto * newCall = builder.Insert(call->clone());
           // add 1
-          Value * add = builder.CreateFAdd(newCall, ConstantFP::get(Ctx, APFloat(1.0)));
+          // Value * add = builder.CreateFAdd(newCall, ConstantFP::get(Ctx, APFloat(1.0)));
 
           // replace old uses with new
-          for (auto &U : call->uses()) {
-           User * user = U.getUser();
-           user->setOperand(U.getOperandNo(), add);
-          }
+          // for (auto &U : call->uses()) {
+          //  User * user = U.getUser();
+          //  user->setOperand(U.getOperandNo(), A);
+          // }
 
           // delete old call
-          call->eraseFromParent();
+          // call->eraseFromParent();
 
-          // errs() << F;
+          errs() << F;
 
           verifyFunction(F);
           return true;

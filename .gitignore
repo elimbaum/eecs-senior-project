@@ -7,3 +7,4 @@ vgcore.*
 *.so
 *.a
 *.ll
+*.bc
