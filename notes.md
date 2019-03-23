@@ -158,6 +158,10 @@ Now I’m running into ABI Breaking issues again! Maybe because of that one buil
 
 ok…. so kaleidoscope isn’t really needed here. I learned a lot but I learned more from the cornell website… I feel like I kinda wasted my time on this.
 
+==> Moved to LLI.
+
+Probably *don’t* want communication to be function calls, because slow, but maybe macros? No need for macros – it’ll all be precompiled!
+
 ### kaleidoscope
 
 does it make sense to use custom JIT, versus hacking on LLI? I like kld. LLI isn’t working on C++.
@@ -216,6 +220,8 @@ it works! hypot test (only MMIO, no LLVM) working perfectly.
 
 *on latency:* latency scheduling seems like it was done before hand. perhaps i could reschedule something, based on my estimate of how long the computation will take (it might not be constant time in something that i’ll know at schedule time, but maybe).
 
+Still can’t get LLI to run on gem5. going into build.ninja (hacky) and removing `--export-dynamic` (equivalent to `rdynamic` for linker) and adding `-static` allows compilation to succeed, but then same symbol lookup issue as before in kaleidoscope.
+
 ### mmap
 
 reading mmap man page. then will start reserving IO, etc.
@@ -233,6 +239,12 @@ don’t really know what to do here. just pick a random address? simplememobj ca
 IO Bus is working!! had to modify FS config file. Now I can be more specific – XBar, only certain addresses. For later: how to get the FU talking to shared memory?
 
 IO Bus is now *really* working. Connected the FU into the bus, reading off its address range! for later: probably should change MMIOFU semantics to primary/secondary or smth.
+
+### LLVM Pass
+
+Carrying over from reading notes – llvm for grad students.
+
+Got a lot working today. Among issues: Function arguments will be numbered incorrectly. Instead, use CallInst args. Iterators are simply pointers to objects. Global variables are themselves pointers – they have to be loaded first, then GEP’d. But now… that’s a working prototype. Amazing!
 
 ### OLD FU Notes
 
