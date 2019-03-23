@@ -35,7 +35,6 @@ void * map_io_mem()
     handle_error("mmap");
   
   close(fd);
-
   return addr;
 }
 

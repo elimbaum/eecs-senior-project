@@ -62,38 +62,41 @@ namespace {
           // load result (can be instantaneous on in-order CPU)
           // need adds for array acces! NO, use GEP!
 
-          // create a new call (can't reuse old one, because replace will mess up)
-          // in real system, this will probably be a load/store pair
-          Constant * io_map = F.getParent()->getOrInsertGlobal("_io_map", Type::getInt8Ty(Ctx));
-          Value * io_map_d = builder.CreateBitCast(io_map, Type::getDoublePtrTy(Ctx), "_io_map_d");
-          
-          std::vector<Value *> idx_list(1);
-          idx_list[0] = ConstantInt::get(Ctx, APInt(32, 1 /*sizeof(double)*/, true));
+          // TODO this call (get global) could probably go in init
+          Constant * io_map_p = F.getParent()->getOrInsertGlobal("_io_map", Type::getInt8PtrTy(Ctx));
+          Value * io_map = builder.CreateBitCast(
+                            builder.CreateLoad(Type::getInt8PtrTy(Ctx), io_map_p),
+                            Type::getDoublePtrTy(Ctx));
+         
+          Value * idx_list[] = {ConstantInt::get(Ctx, APInt(64, 0, true))};
+          //Value * A = builder.CreateGEP(io_map, idx_list);
+          Value * A = builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 0, true)));
+          Value * B = builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 1, true)));
 
-          Value * A = io_map_d; // builder.CreateBitCast(io_map, Type::getDoublePtrTy(Ctx));
-          // Value * B = builder.CreateBitCast(
-          //               builder.CreateInBoundsGEP(io_map, idx_list),
-          //               Type::getDoublePtrTy(Ctx));
-          Value * B = builder.CreateInBoundsGEP(Type::getDoubleTy(Ctx), io_map_d, idx_list);
           auto arg = call->arg_begin();
           builder.CreateStore(arg->get(), A);
           arg++; // next arg
           builder.CreateStore(arg->get(), B);
-            
+
+          // get return
+          // idx_list[0] = ConstantInt::get(Ctx, APInt(32, 2, true));
+          Value * C = builder.CreateLoad(
+              builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 2, true))));
+
           // auto * newCall = builder.Insert(call->clone());
           // add 1
           // Value * add = builder.CreateFAdd(newCall, ConstantFP::get(Ctx, APFloat(1.0)));
 
           // replace old uses with new
-          // for (auto &U : call->uses()) {
-          //  User * user = U.getUser();
-          //  user->setOperand(U.getOperandNo(), A);
-          // }
+          for (auto &U : call->uses()) {
+            User * user = U.getUser();
+            user->setOperand(U.getOperandNo(), C);
+          }
 
           // delete old call
-          // call->eraseFromParent();
+          call->eraseFromParent();
 
-          errs() << F;
+          // errs() << F;
 
           verifyFunction(F);
           return true;

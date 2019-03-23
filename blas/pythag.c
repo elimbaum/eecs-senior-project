@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define LIMIT 50
+#define LIMIT 20
 
 // this is not the most efficient way of generating pythagorean triples:
 // besides floating point accuracy issues, there is also a direct way of

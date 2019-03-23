@@ -19,7 +19,7 @@ bool _create_io_map()
   // confirm that IO_PAGE is actually on a page boundary
   assert((IO_PAGE & (sysconf(_SC_PAGE_SIZE) - 1)) == 0x0);
 
-  char * addr =
+  void * addr =
     mmap(NULL, IO_PAGE_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, IO_PAGE);
   if (addr == MAP_FAILED) {
     perror("mmap");
@@ -28,6 +28,7 @@ bool _create_io_map()
   
   close(fd);
   _io_map = addr;
+  // fprintf(stderr, "Success mapping: %p => %#x\n", _io_map, IO_PAGE);
   return true;
 }
 

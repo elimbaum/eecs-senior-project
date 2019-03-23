@@ -8,3 +8,5 @@ vgcore.*
 *.a
 *.ll
 *.bc
+*.s
+*.exe
