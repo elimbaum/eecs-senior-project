@@ -13,4 +13,4 @@
 
 char * _io_map;
 
-bool _create_io_map(void);
+void _create_io_map(void);

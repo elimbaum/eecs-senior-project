@@ -8,12 +8,12 @@
 
 #include "fu_mmap.h"
 
-bool _create_io_map()
+void _create_io_map()
 {
   int fd = open("/dev/mem", O_RDWR);
   if (fd == -1) {
     perror("open");
-    return false;
+    exit(EXIT_FAILURE);
   }
 
   // confirm that IO_PAGE is actually on a page boundary
@@ -23,13 +23,12 @@ bool _create_io_map()
     mmap(NULL, IO_PAGE_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, IO_PAGE);
   if (addr == MAP_FAILED) {
     perror("mmap");
-    return false;
+    exit(EXIT_FAILURE);
   }
   
   close(fd);
   _io_map = addr;
   // fprintf(stderr, "Success mapping: %p => %#x\n", _io_map, IO_PAGE);
-  return true;
 }
 
 // TODO: do I have to worry about munmap()? Should get closed automatically on exit

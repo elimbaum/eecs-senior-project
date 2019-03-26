@@ -19,15 +19,18 @@ extern char * _io_map;
 namespace {
   struct CallReplPass : public FunctionPass {
     static char ID;
+    Constant * IO_Map_Ptr;
     CallReplPass() : FunctionPass(ID) {}
 
     bool doInitialization(Module &M) {
       // TODO may only want to create this if any relevant functions are called
-      // LLVMContext& Ctx = M.getContext();
-      // create call to mmap
-      // Constant * mapFunc = M.getOrInsertFunction("_create_io_map", Type::getInt32Ty(Ctx));
-      // TODO save virtual pointer in global?
+      
+      LLVMContext& Ctx = M.getContext();
+      IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(Ctx));
+
       // TODO if mapping goes wrong at any point, fall back to original function
+      //   this would require conditionals on every instruction. might not be
+      //   worth -- map should die instead
       return true;
     }
 
@@ -36,7 +39,7 @@ namespace {
 
       if (F.getName() == "main") {
         errs() << "Trying to create initial map...\n";
-        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", Type::getInt32Ty(Ctx));
+        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", Type::getVoidTy(Ctx));
         // Make this the first line of main (first front gets BB, second gets Inst)
         IRBuilder<> builder(& F.front().front());
         builder.CreateCall(mapFunc);
@@ -60,16 +63,19 @@ namespace {
           // store first arg
           // store second arg
           // load result (can be instantaneous on in-order CPU)
-          // need adds for array acces! NO, use GEP!
 
           // TODO this call (get global) could probably go in init
           Constant * io_map_p = F.getParent()->getOrInsertGlobal("_io_map", Type::getInt8PtrTy(Ctx));
+
+          // Casting the array as an array of doubles. Makes sense for testing, might need to change
+          // Global is a POINTER so we have to load it before it can be used.
           Value * io_map = builder.CreateBitCast(
-                            builder.CreateLoad(Type::getInt8PtrTy(Ctx), io_map_p),
-                            Type::getDoublePtrTy(Ctx));
+                             builder.CreateLoad(Type::getInt8PtrTy(Ctx), IO_Map_Ptr),
+                             Type::getDoublePtrTy(Ctx));
          
-          Value * idx_list[] = {ConstantInt::get(Ctx, APInt(64, 0, true))};
-          //Value * A = builder.CreateGEP(io_map, idx_list);
+          // To specify multiple indices:
+          // Value * idx_list[] = {ConstantInt::get(Ctx, APInt(64, 0, true))};
+          // Value * A = builder.CreateGEP(io_map, idx_list);
           Value * A = builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 0, true)));
           Value * B = builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 1, true)));
 
@@ -79,13 +85,8 @@ namespace {
           builder.CreateStore(arg->get(), B);
 
           // get return
-          // idx_list[0] = ConstantInt::get(Ctx, APInt(32, 2, true));
           Value * C = builder.CreateLoad(
               builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 2, true))));
-
-          // auto * newCall = builder.Insert(call->clone());
-          // add 1
-          // Value * add = builder.CreateFAdd(newCall, ConstantFP::get(Ctx, APFloat(1.0)));
 
           // replace old uses with new
           for (auto &U : call->uses()) {
