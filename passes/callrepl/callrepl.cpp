@@ -39,9 +39,13 @@ namespace {
 
       if (F.getName() == "main") {
         errs() << "Trying to create initial map...\n";
-        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", Type::getVoidTy(Ctx));
+        AttributeList AL = AttributeList().addAttribute(Ctx, AttributeList::FunctionIndex, Attribute::NoInline);
+        FunctionType * FTy = FunctionType::get(Type::getVoidTy(Ctx), false);
+        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", FTy);// , AL);
+
         // Make this the first line of main (first front gets BB, second gets Inst)
         IRBuilder<> builder(& F.front().front());
+
         builder.CreateCall(mapFunc);
         verifyFunction(F);
         errs() << "Created map call\n";
@@ -63,9 +67,6 @@ namespace {
           // store first arg
           // store second arg
           // load result (can be instantaneous on in-order CPU)
-
-          // TODO this call (get global) could probably go in init
-          Constant * io_map_p = F.getParent()->getOrInsertGlobal("_io_map", Type::getInt8PtrTy(Ctx));
 
           // Casting the array as an array of doubles. Makes sense for testing, might need to change
           // Global is a POINTER so we have to load it before it can be used.
@@ -97,7 +98,7 @@ namespace {
           // delete old call
           call->eraseFromParent();
 
-          // errs() << F;
+          errs() << F;
 
           verifyFunction(F);
           return true;

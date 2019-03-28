@@ -189,6 +189,7 @@ MMIOFU::accessTiming(PacketPtr pkt)
     DPRINTF(MMIOFU, "Got B: %d\n", B);
   } else if (pkt->getAddr() == BASE_ADDR + 2 * sizeof(double)) {
     // do the computation!
+    // TODO have some kind of flag so we don't accidentally return old results
     double C = sqrt(A * A + B * B);
     pkt->setDataFromBlock((uint8_t *) &C, (int)sizeof(double));
     DPRINTF(MMIOFU, "Sent C: %d\n", C);

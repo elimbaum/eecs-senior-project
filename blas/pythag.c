@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "gem5/m5ops.h"
 
 #define LIMIT 20
 
@@ -9,6 +10,7 @@
 // computing triples (formula is on wikipedia)
 
 int main(int argc, char ** argv) {
+  m5_reset_stats(0, 0);
   // sweep on progressive diagonals
   for (int x = 1; x <= LIMIT; x++) {
     // only check the lower half!
@@ -20,4 +22,5 @@ int main(int argc, char ** argv) {
       }
     }
   }
+  m5_dump_stats(0, 0);
 }

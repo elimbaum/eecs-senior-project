@@ -1,6 +1,7 @@
 CC=clang
-CFLAGS=-g3 -pedantic -Wall
-LDLIBS=-lopenblas -lpthread -lm 
+CFLAGS=-g3 -pedantic -Wall -I ~/gem5/include/
+GEM5=~/gem5/util/m5
+LDLIBS=-lopenblas -lpthread -lm $(GEM5)/m5_mmap.o $(GEM5)/m5op_x86.o
 
 .FORCE: ;
 
@@ -14,7 +15,7 @@ angle.in: .FORCE;
 	$(CC) $< $(CFLAGS) -emit-llvm -S -o $@
 
 pythag_edit: pythag_edit_linked.ll
-	clang $< -lm -o $@
+	clang $< $(LDLIBS) -o $@
 
 pythag_edit_linked.ll: ~/sproj-git/mmiofu/fu_mmap.ll pythag_edit.ll
 	llvm-link $^ -S > $@

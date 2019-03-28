@@ -5,7 +5,7 @@ CFLAGS=-g3 -pedantic -Wall -lm -fPIC
 	$(CC) $< $(CFLAGS) -o $@
 
 fu_mmap.ll: fu_mmap.c
-	$(CC) $< -S -emit-llvm -o $@
+	$(CC) $< -g3 -S -emit-llvm -o $@
 
 fu_mmap.c: fu_mmap.h
 # fu_mmap.h: fu_addr.h
