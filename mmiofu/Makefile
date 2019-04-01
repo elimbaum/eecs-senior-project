@@ -1,4 +1,6 @@
 CC=clang
+CXX=clang++
+LDLIBS=-lopenblas
 CFLAGS=-g3 -pedantic -Wall -lm -fPIC
 
 %: %.c
@@ -11,3 +13,8 @@ fu_mmap.c: fu_mmap.h
 # fu_mmap.h: fu_addr.h
 # fu_addr.h: fu_addr.def
 # 	python3 gen_fu_addr.py < $< > $@
+
+macc.h: reg.h
+
+macc_test: macc_test.cpp macc.h
+	$(CXX) $< $(LDLIBS) -o $@

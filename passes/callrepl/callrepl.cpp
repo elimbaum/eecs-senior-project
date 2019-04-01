@@ -39,14 +39,18 @@ namespace {
 
       if (F.getName() == "main") {
         errs() << "Trying to create initial map...\n";
-        AttributeList AL = AttributeList().addAttribute(Ctx, AttributeList::FunctionIndex, Attribute::NoInline);
-        FunctionType * FTy = FunctionType::get(Type::getVoidTy(Ctx), false);
-        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", FTy);// , AL);
+        // TODO actual function type is void, not bool. but that doesn't compile
+        // due to some kind of debuginfo inlining issue. falsely declaring the
+        // return type doesn't appear to affect anything, since the "return
+        // value" is never used.
+        FunctionType * FTy = FunctionType::get(Type::getInt1Ty(Ctx), false);
+        FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", FTy);
 
         // Make this the first line of main (first front gets BB, second gets Inst)
         IRBuilder<> builder(& F.front().front());
 
-        builder.CreateCall(mapFunc);
+        auto map_call = builder.CreateCall(mapFunc);
+        // map_call->setDebugLoc(builder.getCurrentDebugLocation());
         verifyFunction(F);
         errs() << "Created map call\n";
       }
@@ -98,7 +102,7 @@ namespace {
           // delete old call
           call->eraseFromParent();
 
-          errs() << F;
+          // errs() << F;
 
           verifyFunction(F);
           return true;
