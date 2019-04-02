@@ -20,6 +20,8 @@ class Macc {
     }
 
     void print_stats() {
+      // TODO if multiple Maccs access the same registers, stats will overlap
+      // should be macc-local
       cout << "A: "; A->print_stats();
       cout << "B: "; B->print_stats();
       cout << "C: "; C->print_stats();

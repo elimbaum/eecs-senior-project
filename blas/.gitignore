@@ -1,4 +1,5 @@
 angle
-angle_s
 pythag
 test_blas
+*_s
+pythag_edit

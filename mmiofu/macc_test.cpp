@@ -26,6 +26,7 @@ int main(int argc, char ** argv) {
     cin >> str;
     B[i] = stod(str);
   }
+  // end input stage; begin calculation
 
   // compute with MACC
   Reg total, rA, rB;
@@ -33,6 +34,7 @@ int main(int argc, char ** argv) {
 
   MA.connect(& total, & rA, & rB);
   for(int i = 0; i < N; i++) {
+    // don't update total register
     rA.set(A[i]);
     rB.set(B[i]);
     MA.execute();
