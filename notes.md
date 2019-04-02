@@ -162,6 +162,8 @@ ok…. so kaleidoscope isn’t really needed here. I learned a lot but I learned
 
 Probably *don’t* want communication to be function calls, because slow, but maybe macros? No need for macros – it’ll all be precompiled!
 
+Lang Hames wrote back and suggested adding a line to LLI to load libraries. doesn’t work.
+
 ### kaleidoscope
 
 does it make sense to use custom JIT, versus hacking on LLI? I like kld. LLI isn’t working on C++.
@@ -218,9 +220,13 @@ working on the memory unit. cache is probably a better model than the simple mem
 
 it works! hypot test (only MMIO, no LLVM) working perfectly.
 
-*on latency:* latency scheduling seems like it was done before hand. perhaps i could reschedule something, based on my estimate of how long the computation will take (it might not be constant time in something that i’ll know at schedule time, but maybe).
+*on latency:* latency scheduling seems like it was done before hand. perhaps i could reschedule something, based on my estimate of how long the computation will take (it might not be constant time in something that i’ll know at schedule time, but maybe). could also reschedule response based on computation. i.e. schedule initial computation with 0 or 1 cycle latency, when that’s done, figure out how long it should have taken, and reschedule memory response for that time.
 
 Still can’t get LLI to run on gem5. going into build.ninja (hacky) and removing `--export-dynamic` (equivalent to `rdynamic` for linker) and adding `-static` allows compilation to succeed, but then same symbol lookup issue as before in kaleidoscope.
+
+Another issue: only 13M free on disk, lli is ~30M (static & dynamic). So I will need to figure out the disk image resizing thing.
+
+ok, so initial hyp test (with MMIOFU) looks like we save about 1,887,905 cycles (1887905451 ticks) per calculation (ran 1000 total on that test.) that doesn’t totally seem right. Hm. Not sure what tick/cycle/time exchange is. Saved 19894 instructions per iter? That makes a little more sense. function call, floating point math, square root? I would have though more of these were native but I guess not. so even say 40 iterations (pretty accurate) of square root, that looks like around 160 reg read/80 write on X. That’s 80 mac executions, maybe 1000 register access conservative. call it 100/1000. reg access can be 1 cycle. mac execute… 10 cycles? so that’s 2000 cycles. could be huge savings.
 
 ### mmap
 
@@ -383,9 +389,9 @@ void dot(int N, double * A, double * B) {
 }
 ```
 
-Using babylonian sqrt algorithm for norm. precision can be fixed, or set by log of S? Looking into this. But it’s very accurate. Might actually scale with ln(S). oH yes. with each iteration, the distance is halved… logarithmic. stack overflow gives $\log(|n-\sqrt{n}|/\epsilon)$. that math doesn’t totally work out, but that’s actually asymptotically  $\log(n)$.
+Using babylonian sqrt algorithm for norm. precision can be fixed, or set by log of S? Looking into this. But it’s very accurate. Might actually scale with ln(S). oH yes. with each iteration, the distance is halved… logarithmic. stack overflow gives $\log(|n-\sqrt{n}|/\epsilon)​$. that math doesn’t totally work out, but that’s actually asymptotically  $\log(n)​$.
 
-Interesting: $\ln(x)=\lg(x)\ln(2)$ so $\lceil \ln(x)\rceil\approx\lceil lg(x)\rceil\ln(2)$ and ceil of binary log is just bit len or so… huge. bitlen • 0.693. for float, this is the exponent value, apparently. edge cases here near bit boundaries, but whatever. this is a precision estimate. already going to be pretty close.
+Interesting: $\ln(x)=\lg(x)\ln(2)​$ so $\lceil \ln(x)\rceil\approx\lceil lg(x)\rceil\ln(2)​$ and ceil of binary log is just bit len or so… huge. bitlen • 0.693. for float, this is the exponent value, apparently. edge cases here near bit boundaries, but whatever. this is a precision estimate. already going to be pretty close.
 
 only issue with calling dot is that this might do two loads from cache. or would it? recent cache hit should be pretty fast, after all.
 
@@ -435,6 +441,8 @@ void saxpy(int N, double * A, double * B, double k) {
 To measure latency, could check # of calls to MAC (/ by number of MACs?). Not sure how to handle concurrency. Or could create some kind of concurrency model. Also haven’t figured out the shared memory yet. These pointers are passed in by MMIO, but how is the information accessed from there?
 
 I’m thinking all constants (N, as well as constant multipliers) can just be passed by value via MMIO. Not sure about returns. dot and norm might as well return to MMIO… speed won’t be the limiting factor there, and MMIO might make more sense for the program.
+
+MAC should probably be a class. 
 
 ## Meeting Notes
 
@@ -935,12 +943,12 @@ GEP only does address calculation, no memory access. this is also making pointer
 
 `getelementptr <type>, <start addr> <offset>...`
 
-GEP must access memory, so sometimes compound accesses must be broken up if you have double pointers, perhaps? Accessing the 0th element with GEP *does not change the location, but does change the type.*
+result of GEP must access memory, so sometimes compound accesses must be broken up if you have double pointers, perhaps? Accessing the 0th element with GEP *does not change the location, but does change the type.*
 
 The summary is good:
 
 1. *The GEP instruction **never accesses memory**, it only provides pointer computations.*
-2. *The second operand to the GEP instruction is **always a pointer and it must be indexed***.*
+2. *The second operand to the GEP instruction is **always a pointer and it must be indexed***.
 3. *There are no superfluous indices for the GEP instruction.*
 4. *Trailing zero indices are superfluous for pointer aliasing, but not for the types of the pointers.*
 5. *Leading zero indices are not superfluous for pointer aliasing nor the types of the pointers.*
