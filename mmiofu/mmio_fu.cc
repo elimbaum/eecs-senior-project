@@ -1,6 +1,8 @@
 #include "mmiofu/mmio_fu.hh"
 #include "debug/MMIOFU.hh"
 
+#include "blas_operation.h"
+
 MMIOFU::MMIOFU(MMIOFUParams * params) :
   MemObject(params),
   cpuPort(params->name + ".cpu_side", this),
@@ -137,7 +139,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
   // memPort.sendPacket(pkt);
   schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
                                    name() + ".accessEvent", true),
-           clockEdge(Cycles(5)));
+           clockEdge(Cycles(0)));
   return true;
 }
 
