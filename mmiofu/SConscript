@@ -3,5 +3,7 @@ Import ('*')
 SimObject('MMIOFU.py')
 Source('mmio_fu.cc')
 
+env.Append(LIBS="openblas")
+
 DebugFlag('MMIOFU', "General FU debugging")
 

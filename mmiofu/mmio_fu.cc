@@ -136,10 +136,29 @@ MMIOFU::handleRequest(PacketPtr pkt)
   DPRINTF(MMIOFU, "Request for addr  %#x\n", pkt->getAddr());
   blocked = true;
   
-  // memPort.sendPacket(pkt);
-  schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
-                                   name() + ".accessEvent", true),
-           clockEdge(Cycles(0)));
+  // do computation here
+  if (pkt->getAddr() == GET_IDX(IDX_FUNCTION)) {
+    double _func_idx;
+    pkt->writeDataToBlock((uint8_t *)&_func_idx, (int)sizeof(double));
+    int func_idx = (int)_func_idx;
+    DPRINTF(MMIOFU, "Request for function %d\n", func_idx);
+   
+    // TODO make this dynamic
+    panic_if(func_idx >= NUM_FUNCS, "Invalid function number");
+    blasop op = operations[(int) func_idx];
+  }
+  
+  pkt->makeResponse();
+
+  // figure out timing
+  // schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
+  //                                  name() + ".accessEvent", true),
+  //          clockEdge(Cycles(0)));
+
+  schedule(new EventFunctionWrapper([this, pkt]{ sendResponse(pkt); },
+                                    name() + ".responseEvent", true),
+           clockEdge(Cycles(5)));
+
   return true;
 }
 
