@@ -2,6 +2,7 @@ Import ('*')
 
 SimObject('MMIOFU.py')
 Source('mmio_fu.cc')
+Source('blas_operation.cc')
 
 env.Append(LIBS="openblas")
 

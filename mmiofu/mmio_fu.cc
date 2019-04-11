@@ -3,6 +3,8 @@
 
 #include "blas_operation.h"
 
+extern blasop operations[];
+
 MMIOFU::MMIOFU(MMIOFUParams * params) :
   MemObject(params),
   cpuPort(params->name + ".cpu_side", this),
@@ -46,7 +48,7 @@ MMIOFU::CPUSidePort::sendPacket(PacketPtr pkt)
     blockedPacket = pkt;
     DPRINTF(MMIOFU, "Couldn't send\n");
   } else {
-    DPRINTF(MMIOFU, "Sent!\n");
+    // DPRINTF(MMIOFU, "Sent!\n");
   }
 }
 
@@ -137,16 +139,50 @@ MMIOFU::handleRequest(PacketPtr pkt)
   blocked = true;
   
   // do computation here
-  if (pkt->getAddr() == GET_IDX(IDX_FUNCTION)) {
-    double _func_idx;
-    pkt->writeDataToBlock((uint8_t *)&_func_idx, (int)sizeof(double));
-    int func_idx = (int)_func_idx;
-    DPRINTF(MMIOFU, "Request for function %d\n", func_idx);
-   
-    // TODO make this dynamic
-    panic_if(func_idx >= NUM_FUNCS, "Invalid function number");
-    blasop op = operations[(int) func_idx];
+  auto addr = pkt->getAddr();
+  switch (addr) {
+    case GET_ADDR(IDX_FUNCTION):
+      {
+        double _func_idx;
+        pkt->writeDataToBlock((uint8_t *)&_func_idx, (int)sizeof(double));
+        int func_idx = (int)_func_idx;
+        DPRINTF(MMIOFU, "Request for function %d\n", func_idx);
+       
+        panic_if(func_idx >= NUM_FUNCS, "Invalid function number");
+        op = operations[(int) func_idx];
+        DPRINTF(MMIOFU, "... %s\n", op.cblas_name.c_str());
+
+        // TODO set dirty bit
+        double ret = op.func(_N, _alpha, _X, _Y);
+        
+        // if function returns, return value. otherwise ignore it (probably garbage)
+        // TODO: is this ok? segfault risk?
+        if (op.returns) {
+          pkt->setDataFromBlock((uint8_t *) &ret, (int)sizeof(double));
+        }
+      }
+      break;
+
+    case GET_ADDR(IDX_ALPHA):
+      pkt->writeDataToBlock((uint8_t *)&_alpha, (int)sizeof(double));
+      DPRINTF(MMIOFU, "  Setting alpha:  %f\n", _alpha);
+      break;
+
+    case GET_ADDR(IDX_N):
+      pkt->writeDataToBlock((uint8_t *)&_N, (int)sizeof(double));
+      DPRINTF(MMIOFU, "  Setting N %d\n", _N);
+      break;
+
+    default:
+      // invalid, or X or Y
+      if (GET_INDEX(addr) < IDX_START_X + IDX_N) {
+        // X
+      } else if (GET_INDEX(addr) < IDX_START_X + 2 * IDX_N) {
+        // Y
+      }
+      break;
   }
+  // add parameters to class!
   
   pkt->makeResponse();
 
@@ -155,6 +191,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
   //                                  name() + ".accessEvent", true),
   //          clockEdge(Cycles(0)));
 
+  // Schedule the response based on 
   schedule(new EventFunctionWrapper([this, pkt]{ sendResponse(pkt); },
                                     name() + ".responseEvent", true),
            clockEdge(Cycles(5)));
@@ -194,6 +231,7 @@ MMIOFU::handleFunctional(PacketPtr pkt)
   }
 }
 
+/*
 #define BASE_ADDR 0xFFFEF000
 double A, B;
 
@@ -219,7 +257,7 @@ MMIOFU::accessTiming(PacketPtr pkt)
   pkt->makeResponse();
   sendResponse(pkt);
   DPRINTF(MMIOFU, "end of AT\n");
-}
+} */
 
 bool
 MMIOFU::accessFunctional(PacketPtr pkt)

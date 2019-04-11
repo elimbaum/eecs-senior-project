@@ -1,6 +1,8 @@
 #include "mem/mem_object.hh"
 #include "params/MMIOFU.hh"
 
+#include "blas_operation.h"
+
 class MMIOFU : public MemObject
 {
   private:
@@ -63,6 +65,14 @@ class MMIOFU : public MemObject
     MemSidePort memPort;
 
     bool blocked;
+
+    blasop op;
+    bool dirty;
+
+    int _N;
+    double _alpha;
+    double * _X;
+    double * _Y;
 
   public:
     MMIOFU(MMIOFUParams * params);
