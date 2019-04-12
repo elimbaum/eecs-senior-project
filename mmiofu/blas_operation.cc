@@ -18,7 +18,15 @@ double _ddot(int N, double alpha, double * X, double * Y) {
 }
 
 double _dnrm2(int N, double alpha, double * X, double * Y) {
-  cout << "_dnrm2\n";
+  cout << "_dnrm2 " << N << "\n";
+  for (int i = 0; i < N; i++) {
+    cout << X[i] << " ";
+  }
+  cout << "\n";
+  for (int i = 0; i < N; i++) {
+    cout << Y[i] << " ";
+  }
+  cout << "\n";
   return cblas_dnrm2(N, X, INC_X);
 }
 

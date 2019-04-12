@@ -143,35 +143,46 @@ MMIOFU::handleRequest(PacketPtr pkt)
   switch (addr) {
     case GET_ADDR(IDX_FUNCTION):
       {
-        double _func_idx;
-        pkt->writeDataToBlock((uint8_t *)&_func_idx, (int)sizeof(double));
-        int func_idx = (int)_func_idx;
-        DPRINTF(MMIOFU, "Request for function %d\n", func_idx);
-       
-        panic_if(func_idx >= NUM_FUNCS, "Invalid function number");
-        op = operations[(int) func_idx];
-        DPRINTF(MMIOFU, "... %s\n", op.cblas_name.c_str());
+        if (pkt->isWrite()) {
+          double _func_idx;
+          pkt->writeDataToBlock((uint8_t *)&_func_idx, (int)sizeof(double));
+          int func_idx = (int)_func_idx;
+          DPRINTF(MMIOFU, "Request for function %d\n", func_idx);
+         
+          panic_if(func_idx >= NUM_FUNCS, "Invalid function number");
+          op = operations[(int) func_idx];
+          DPRINTF(MMIOFU, "... %s\n", op.cblas_name.c_str());
 
-        // TODO set dirty bit
-        double ret = op.func(_N, _alpha, _X, _Y);
-        
-        // if function returns, return value. otherwise ignore it (probably garbage)
-        // TODO: is this ok? segfault risk?
-        // can't actually do this: responding to a WRITE. needs to be next call, or put it in alpha.
-        // TODO: need distinction between READ and WRITE for alpha/X/Y; maybe all.
-        if (op.returns) {
-          pkt->setDataFromBlock((uint8_t *) &ret, (int)sizeof(double));
+          // if function returns, return value. otherwise ignore it (probably garbage)
+          // TODO: is this ok? segfault risk?
+          // can't actually do this: responding to a WRITE. needs to be next call, or put it in alpha.
+          // TODO: need distinction between READ and WRITE for alpha/X/Y; maybe all.
+          if (op.returns) {
+            _alpha = op.func(_N, _alpha, _X, _Y);
+            DPRINTF(MMIOFU, "ret: %d\n", _alpha);
+          } else {
+            op.func(_N, _alpha, _X, _Y);
+          }
+        } else if (pkt->isRead()) {
+          DPRINTF(MMIOFU, "trying to read function index");
         }
       }
       break;
 
     case GET_ADDR(IDX_ALPHA):
-      pkt->writeDataToBlock((uint8_t *)&_alpha, (int)sizeof(double));
-      DPRINTF(MMIOFU, "  Setting alpha:  %f\n", _alpha);
+      if (pkt->isWrite()) {
+        pkt->writeDataToBlock((uint8_t *)&_alpha, (int)sizeof(double));
+        DPRINTF(MMIOFU, "  Setting alpha: %f\n", _alpha);
+      } else if (pkt->isRead()) {
+        pkt->setDataFromBlock((uint8_t *)&_alpha, (int)sizeof(double));
+        DPRINTF(MMIOFU, "  Sending alpha: %f\n", _alpha);
+      }
       break;
 
     case GET_ADDR(IDX_N):
-      pkt->writeDataToBlock((uint8_t *)&_N, (int)sizeof(double));
+      double _dN;
+      pkt->writeDataToBlock((uint8_t *)&_dN, (int)sizeof(double));
+      _N = (int)_dN;
       DPRINTF(MMIOFU, "  Setting N %d\n", _N);
       _X = (double *)realloc(_X, _N * sizeof(double));
       _Y = (double *)realloc(_Y, _N * sizeof(double));
@@ -180,10 +191,12 @@ MMIOFU::handleRequest(PacketPtr pkt)
 
     default:
       // invalid, or X or Y
-      if (GET_INDEX(addr) < IDX_START_X + IDX_N) {
+      if (GET_INDEX(addr) < IDX_START_X + _N) {
+        DPRINTF(MMIOFU, "X: %x => %d => %d\n", addr, GET_INDEX(addr), GET_INDEX(addr) - IDX_START_X);
         pkt->writeDataToBlock((uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]),
             (int)sizeof(double));
-      } else if (GET_INDEX(addr) < IDX_START_X + 2 * IDX_N) {
+      } else if (GET_INDEX(addr) < IDX_START_X + 2 * _N) {
+        DPRINTF(MMIOFU, "Y: %x => %d\n", addr, GET_INDEX(addr) - IDX_START_X - _N);
         pkt->writeDataToBlock((uint8_t *)&(_Y[GET_INDEX(addr) - IDX_START_X - _N]),
             (int)sizeof(double));
       }

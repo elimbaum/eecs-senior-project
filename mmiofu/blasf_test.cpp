@@ -19,15 +19,20 @@ int main() {
   double X[N] = {1, 0.4, 9.8};
   double Y[N] = {-2, 3.8, 10};
 
-  io_map[IDX_N] = N;
+  io_map[IDX_N] = 3.0;
 
   for(int i = 0; i < N; i++) {
-    io_map[IDX_START_X + i] = X[i];
-    io_map[IDX_START_X + N+ i] = Y[i];
+    int xi = IDX_START_X + i;
+    int yi = xi + N;
+    // cout << xi << ", " << yi << "\n";
+    io_map[xi] = X[i];
+    io_map[yi] = Y[i];
   }
 
   // run!
   io_map[IDX_FUNCTION] = 3; // nrm2
+
+  cout << io_map[IDX_ALPHA] << "\n";
 
   cout << "done\n";
 }

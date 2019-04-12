@@ -10,11 +10,33 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
+#include <map>
+
 #include "fu_mmap.h"
 
 using namespace llvm;
 
 extern char * _io_map;
+
+enum FuncType {
+  RET_VOID,
+  RET_DOUBLE,
+  RET_INT,
+  ARG_N,
+  ARG_ALPHA,
+  ARG_X,
+  ARG_Y
+};
+
+std::map<std::string, std::vector<FuncType>> functions = {
+  {"cblas_dscal",  { RET_VOID,   ARG_N, ARG_ALPHA, ARG_X        }},
+  {"cblas_daxpy",  { RET_VOID,   ARG_N, ARG_ALPHA, ARG_X, ARG_Y }},
+  {"cblas_ddot",   { RET_DOUBLE, ARG_N,            ARG_X, ARG_Y }},
+  {"cblas_dnrm2",  { RET_DOUBLE, ARG_N,            ARG_X        }},
+  {"cblas_dasum",  { RET_DOUBLE, ARG_N,            ARG_X        }},
+  {"cblas_idamax", { RET_INT,    ARG_N,            ARG_X        }}
+};
+
 
 namespace {
   struct CallReplPass : public FunctionPass {
@@ -58,8 +80,8 @@ namespace {
       for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
         if (auto * call = dyn_cast<CallInst>(&*I)) {
           // only look at cblas functions
-          // if (! call->getCalledFunction()->getName().startswith("cblas_"))
-          //  continue;
+          if (! call->getCalledFunction()->getName().startswith("cblas_"))
+            continue;
 
           // test with hypot
           Function * oldF = call->getCalledFunction();
