@@ -6,6 +6,8 @@
 #ifndef _BLAS_OP
 #define _BLAS_OP
 
+using namespace std;
+
 #define BASE_ADDR 0xFFFEF000
 #define PAGE_LEN  0x1000
 
@@ -27,8 +29,6 @@
 // TODO be careful using sizeof(double), since host and sim machine may differ
 #define GET_ADDR(idx) (BASE_ADDR + idx * sizeof(double))
 #define GET_INDEX(addr) ((addr - BASE_ADDR) / sizeof(double))
-
-using namespace std;
 
 double _dscal(int N, double alpha, double * X, double * Y);
 double _daxpy(int N, double alpha, double * X, double * Y);

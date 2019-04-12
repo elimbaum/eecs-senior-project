@@ -157,6 +157,8 @@ MMIOFU::handleRequest(PacketPtr pkt)
         
         // if function returns, return value. otherwise ignore it (probably garbage)
         // TODO: is this ok? segfault risk?
+        // can't actually do this: responding to a WRITE. needs to be next call, or put it in alpha.
+        // TODO: need distinction between READ and WRITE for alpha/X/Y; maybe all.
         if (op.returns) {
           pkt->setDataFromBlock((uint8_t *) &ret, (int)sizeof(double));
         }
@@ -171,18 +173,22 @@ MMIOFU::handleRequest(PacketPtr pkt)
     case GET_ADDR(IDX_N):
       pkt->writeDataToBlock((uint8_t *)&_N, (int)sizeof(double));
       DPRINTF(MMIOFU, "  Setting N %d\n", _N);
+      _X = (double *)realloc(_X, _N * sizeof(double));
+      _Y = (double *)realloc(_Y, _N * sizeof(double));
+      // TODO bounds check on N
       break;
 
     default:
       // invalid, or X or Y
       if (GET_INDEX(addr) < IDX_START_X + IDX_N) {
-        // X
+        pkt->writeDataToBlock((uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]),
+            (int)sizeof(double));
       } else if (GET_INDEX(addr) < IDX_START_X + 2 * IDX_N) {
-        // Y
+        pkt->writeDataToBlock((uint8_t *)&(_Y[GET_INDEX(addr) - IDX_START_X - _N]),
+            (int)sizeof(double));
       }
       break;
   }
-  // add parameters to class!
   
   pkt->makeResponse();
 

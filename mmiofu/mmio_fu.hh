@@ -71,6 +71,7 @@ class MMIOFU : public MemObject
 
     int _N;
     double _alpha;
+    // TODO these can be vectors, probably? then no need for alloc
     double * _X;
     double * _Y;
 
