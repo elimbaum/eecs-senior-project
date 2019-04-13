@@ -30,7 +30,7 @@ int main() {
   }
 
   // run!
-  io_map[IDX_FUNCTION] = 3; // nrm2
+  io_map[IDX_FUNCTION] = 2; // dot
 
   cout << io_map[IDX_ALPHA] << "\n";
 

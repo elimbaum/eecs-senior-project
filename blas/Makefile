@@ -14,12 +14,12 @@ angle.in: .FORCE;
 %.ll: %.c
 	$(CC) $< $(CFLAGS) -DSIMULATED -emit-llvm -S -o $@
 
-pythag_edit: pythag_edit_linked.ll
+%_edit: %_edit_linked.ll
 	clang $< -static $(LDLIBS) -o $@
 
-pythag_edit_linked.ll: ~/sproj-git/mmiofu/fu_mmap.ll pythag_edit.ll
+%_linked.ll: ~/sproj-git/mmiofu/fu_mmap.ll %.ll
 	llvm-link $^ -S -o $@
 
-pythag_edit.ll: pythag.ll ~/sproj-git/passes/callrepl/libCallReplPass.so
+%_edit.ll: %.ll ~/sproj-git/passes/callrepl/libCallReplPass.so
 	opt -load $(word 2, $^) -callrepl -S < $< > $@
 

@@ -164,7 +164,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
             op.func(_N, _alpha, _X, _Y);
           }
         } else if (pkt->isRead()) {
-          DPRINTF(MMIOFU, "trying to read function index");
+          DPRINTF(MMIOFU, "cannot read function index");
         }
       }
       break;
@@ -172,10 +172,10 @@ MMIOFU::handleRequest(PacketPtr pkt)
     case GET_ADDR(IDX_ALPHA):
       if (pkt->isWrite()) {
         pkt->writeDataToBlock((uint8_t *)&_alpha, (int)sizeof(double));
-        DPRINTF(MMIOFU, "  Setting alpha: %f\n", _alpha);
+        DPRINTF(MMIOFU, "  Received alpha: %f\n", _alpha);
       } else if (pkt->isRead()) {
         pkt->setDataFromBlock((uint8_t *)&_alpha, (int)sizeof(double));
-        DPRINTF(MMIOFU, "  Sending alpha: %f\n", _alpha);
+        DPRINTF(MMIOFU, "  Sent alpha: %f\n", _alpha);
       }
       break;
 
@@ -191,6 +191,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
 
     default:
       // invalid, or X or Y
+      // TODO for scal and axpy, will need read/write check here
       if (GET_INDEX(addr) < IDX_START_X + _N) {
         DPRINTF(MMIOFU, "X: %x => %d => %d\n", addr, GET_INDEX(addr), GET_INDEX(addr) - IDX_START_X);
         pkt->writeDataToBlock((uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]),

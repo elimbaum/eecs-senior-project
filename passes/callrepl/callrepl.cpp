@@ -1,3 +1,5 @@
+#include <map>
+
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstrTypes.h"
@@ -10,31 +12,36 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
-#include <map>
-
 #include "fu_mmap.h"
+#include "blas_operation.h"
 
 using namespace llvm;
 
 extern char * _io_map;
 
-enum FuncType {
+enum RetType {
   RET_VOID,
   RET_DOUBLE,
-  RET_INT,
+  RET_INT
+};
+
+enum ArgType {
   ARG_N,
   ARG_ALPHA,
   ARG_X,
   ARG_Y
 };
 
-std::map<std::string, std::vector<FuncType>> functions = {
-  {"cblas_dscal",  { RET_VOID,   ARG_N, ARG_ALPHA, ARG_X        }},
-  {"cblas_daxpy",  { RET_VOID,   ARG_N, ARG_ALPHA, ARG_X, ARG_Y }},
-  {"cblas_ddot",   { RET_DOUBLE, ARG_N,            ARG_X, ARG_Y }},
-  {"cblas_dnrm2",  { RET_DOUBLE, ARG_N,            ARG_X        }},
-  {"cblas_dasum",  { RET_DOUBLE, ARG_N,            ARG_X        }},
-  {"cblas_idamax", { RET_INT,    ARG_N,            ARG_X        }}
+// TODO maybe this map could be combined with the array in blas_operation.h
+// TODO somehow need to get indices from the header file
+// TODO this should be a struct, maybe
+std::map<std::string, std::tuple<int, RetType, std::vector<ArgType>>> functions = {
+  {"cblas_dscal",  {0, RET_VOID  , { ARG_N, ARG_ALPHA, ARG_X        }}},
+  {"cblas_daxpy",  {1, RET_VOID  , { ARG_N, ARG_ALPHA, ARG_X, ARG_Y }}},
+  {"cblas_ddot",   {2, RET_DOUBLE, { ARG_N,            ARG_X, ARG_Y }}},
+  {"cblas_dnrm2",  {3, RET_DOUBLE, { ARG_N,            ARG_X        }}},
+  {"cblas_dasum",  {4, RET_DOUBLE, { ARG_N,            ARG_X        }}},
+  {"cblas_idamax", {5, RET_INT   , { ARG_N,            ARG_X        }}}
 };
 
 
@@ -79,27 +86,67 @@ namespace {
 
       for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
         if (auto * call = dyn_cast<CallInst>(&*I)) {
-          // only look at cblas functions
-          if (! call->getCalledFunction()->getName().startswith("cblas_"))
-            continue;
-
-          // test with hypot
           Function * oldF = call->getCalledFunction();
-          if (oldF->getName() != "hypot") continue;
+
+          auto it = functions.find(oldF->getName());
+          if (it == functions.end()) {
+            // This function not found.
+            continue;
+          }
+
+          int func_id;
+          RetType ret;
+          std::vector argv;
+          auto signature = it->second;
+          std::tie(func_id, ret, argv) = signature;
+
+          errs() << "Found function " << oldF->getName() << " with sig ";
+          for (auto i = argv.begin(); i != argv.end(); ++i) {
+            errs() << *i << " ";
+          }
+          errs() << "\n";
 
           IRBuilder<> builder(call);
+          
+          // move insertion point after call -- not sure if necessary
           builder.SetInsertPoint(call->getParent(), ++builder.GetInsertPoint());
 
-          // store first arg
-          // store second arg
-          // load result (can be instantaneous on in-order CPU)
-
-          // Casting the array as an array of doubles. Makes sense for testing, might need to change
-          // Global is a POINTER so we have to load it before it can be used.
+          // load the io_map array
           Value * io_map = builder.CreateBitCast(
                              builder.CreateLoad(Type::getInt8PtrTy(Ctx), IO_Map_Ptr),
                              Type::getDoublePtrTy(Ctx));
-         
+
+          // loop through arguments
+          for (auto i = argv.begin(); i != argv.end(); ++i) {
+            // check which argument this is
+            // get array index
+            // store
+            // for arrays: loop through and copy
+          }
+
+          // run function! (store function ID into array)
+          Value * func_idx = builder.CreateInBoundGEP(io_map,
+              ConstantInt::get(Ctx, APInt(64, IDX_FUNCTION, true));
+          builder.CreateStore(ConstantInt::get(Ctx, APInt(32, func_id, true)), func_idx);
+
+          if (ret != RET_VOID) {
+            Value * r = builder.CreateLoad(
+                builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, IDX_ALPHA, true))));
+
+            if (ret == RET_INT) {
+              r = builder.CreateIntCast(r, Type::getInt32Ty(Ctx), true);
+            }
+            // ret == RET_DOUBLE: nop, already have a double
+            
+            // replace
+            for (auto &U : call->uses()) {
+              User * user = U.getUser();
+              user->setOperand(U.getOperandNo(), r);
+            }
+          }
+
+          // test with hypot
+          /*
           // To specify multiple indices:
           // Value * idx_list[] = {ConstantInt::get(Ctx, APInt(64, 0, true))};
           // Value * A = builder.CreateGEP(io_map, idx_list);
@@ -115,11 +162,7 @@ namespace {
           Value * C = builder.CreateLoad(
               builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 2, true))));
 
-          // replace old uses with new
-          for (auto &U : call->uses()) {
-            User * user = U.getUser();
-            user->setOperand(U.getOperandNo(), C);
-          }
+          */
 
           // delete old call
           call->eraseFromParent();
