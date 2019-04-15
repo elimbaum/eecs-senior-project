@@ -24,7 +24,7 @@ double _dnrm2(int N, double alpha, double * X, double * Y) {
 
 double _dasum(int N, double alpha, double * X, double * Y) {
   cout << "_dasum\n";
-  return cblas_ddot(N, X, INC_X, Y, INC_Y);
+  return cblas_dasum(N, X, INC_X);
 }
 
 // For call compatability, this must be a double. However, LLVM pass will cast

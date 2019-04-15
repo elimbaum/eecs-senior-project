@@ -183,7 +183,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
       double _dN;
       pkt->writeDataToBlock((uint8_t *)&_dN, (int)sizeof(double));
       _N = (int)_dN;
-      DPRINTF(MMIOFU, "  Setting N %d\n", _N);
+      DPRINTF(MMIOFU, "  Setting N %d (new size: %d)\n", _N, _N * sizeof(double));
       _X = (double *)realloc(_X, _N * sizeof(double));
       _Y = (double *)realloc(_Y, _N * sizeof(double));
       // TODO bounds check on N
@@ -193,9 +193,9 @@ MMIOFU::handleRequest(PacketPtr pkt)
       // invalid, or X or Y
       // TODO for scal and axpy, will need read/write check here
       if (GET_INDEX(addr) < IDX_START_X + _N) {
-        DPRINTF(MMIOFU, "X: %x => %d => %d\n", addr, GET_INDEX(addr), GET_INDEX(addr) - IDX_START_X);
-        pkt->writeDataToBlock((uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]),
-            (int)sizeof(double));
+        DPRINTF(MMIOFU, "X: %x => %d => %d (size %d)\n",
+            addr, GET_INDEX(addr), GET_INDEX(addr) - IDX_START_X, pkt->getSize());
+        pkt->writeDataToBlock((uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]), pkt->getSize());
       } else if (GET_INDEX(addr) < IDX_START_X + 2 * _N) {
         DPRINTF(MMIOFU, "Y: %x => %d\n", addr, GET_INDEX(addr) - IDX_START_X - _N);
         pkt->writeDataToBlock((uint8_t *)&(_Y[GET_INDEX(addr) - IDX_START_X - _N]),

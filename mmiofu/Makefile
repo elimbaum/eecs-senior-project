@@ -16,6 +16,8 @@ macc.h: reg.h
 macc_test: macc_test.cpp macc.h
 	$(CXX) $< $(LDLIBS) -o $@
 
-
 blasf_test: blasf_test.o fu_mmap.o
 	$(CXX) $^ -o $@
+
+blas_operation.o: blas_operation.cc blas_operation.h
+	$(CXX) -fPIC $< $(LDLIBS) -c -o $@
