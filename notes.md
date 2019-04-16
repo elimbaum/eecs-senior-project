@@ -24,11 +24,10 @@ Advisor: Rajit Manohar
 
 - [ ] LLVM write up
 - [x] BLAS
-- [ ] add hardware feature in gem5
-  - [x] MMIO – JIT substitutes a function call with pointers?
-  - [ ] Determine protocol for sending commands/receiving data
-  - [ ] shared memory
-  - [ ] blocking read until results ready
+- [x] MMIO – JIT substitutes a function call with pointers?
+- [x] Determine protocol for sending commands/receiving data
+- [ ] shared memory: pre TLB virtual memory component
+- [ ] blocking memory / dirty bit?
 
 
 ## Important Dates
@@ -84,6 +83,14 @@ systemC _is_ required, have to load GCC 7.3.0. ohhh in meeting we said RISC migh
 It seems like everything is loaded correctly. I don’t know why it’s not working. Trying in local lubuntu VM. Looks like zoo works, however. Local lubuntu also works. **Moving to zoo**
 
 Guess that means I need to reinstall LLVM locally on zoo. lol. git & configs moved over.
+
+I also need a **title**. Memory-mapped functional unit substitution for BLAS subroutines. Hardware functional unit replacement… dynamic binary translation for memory-mapped hardware functional units.
+
+Dynamic Binary Translation for Auxiliary Hardware Functional Units
+
+Dynamic Binary Translation for Optimized ~~Hardware~~ Functional Units DBTOHFU
+
+Dynamic* Binary Translation for Optimized Functional Units DBTOFU i like that.
 
 ### Installing LLVM on Zoo
 
@@ -226,7 +233,7 @@ Still can’t get LLI to run on gem5. going into build.ninja (hacky) and removin
 
 Another issue: only 13M free on disk, lli is ~30M (static & dynamic). So I will need to figure out the disk image resizing thing.
 
-ok, so initial hyp test (with MMIOFU) looks like we save about 1,887,905 cycles (1887905451 ticks) per calculation (ran 1000 total on that test.) that doesn’t totally seem right. Hm. Not sure what tick/cycle/time exchange is. Saved 19894 instructions per iter? That makes a little more sense. function call, floating point math, square root? I would have though more of these were native but I guess not. so even say 40 iterations (pretty accurate) of square root, that looks like around 160 reg read/80 write on X. That’s 80 mac executions, maybe 1000 register access conservative. call it 100/1000. reg access can be 1 cycle. mac execute… 10 cycles? so that’s 2000 cycles. could be huge savings.
+ok, so initial hyp test (with MMIOFU) looks like we save about 1,887,905 cycles (1887905451 ticks) per calculation (ran 1000 total on that test.) that doesn’t totally seem right. Hm. Not sure what tick/cycle/time exchange is. Saved 19894 instructions per iter? That makes a little more sense. function call, floating point math, square root? I would have though more of these were native but I guess not. so even say 40 iterations (pretty accurate) of square root, that looks like around 160 reg read/80 write on X. That’s 80 mac executions, maybe 1000 register access conservative. call it 100/1000. reg access can be 1 cycle. mac execute… 10 cycles? so that’s 2000 cycles. could be huge savings. *Rajit has sent me timings*
 
 ### mmap
 
@@ -251,6 +258,8 @@ IO Bus is now *really* working. Connected the FU into the bus, reading off its a
 Carrying over from reading notes – llvm for grad students.
 
 Got a lot working today. Among issues: Function arguments will be numbered incorrectly. Instead, use CallInst args. Iterators are simply pointers to objects. Global variables are themselves pointers – they have to be loaded first, then GEP’d. But now… that’s a working prototype. Amazing!
+
+To do CBLAS, need to know signature of each function. is that in LLI? ok, technically function signature is in the IR, but I won’t know anything about it – is this X or Y? don’t want to be guessing. so the pass needs to include the header, I guess. That’s interesting. need to get a representation of the header file in code. Maybe name matching is the best. Can this be automated? header file parser sounds gross. temporarily, at least just use a dictionary indexed on function name mapping to vector of arguments (enum)
 
 ### OLD FU Notes
 
@@ -444,6 +453,17 @@ I’m thinking all constants (N, as well as constant multipliers) can just be pa
 
 MAC should probably be a class. 
 
+How do I do function calls within the simulated MMIOFU? I have an array of those blas_operation structs. this is effectively just a map from numbers to functions. ok. i can’t have different signatures, because i need to have a single calling site… well not really. i could pass different functions in the struct, but i also don’t like that. i’m thinking one function signature, pass all arguments, let the function deal with it internally.
+
+is this the best way to do it? if i’m passing the same arguments to everyone…….. i feel like i shouldn’t pass all of them? no, can’t use globals because might parallelize eventually. this is a workable solution but not clean.
+
+also need to write back modified arrays! Need to keep an internal array to store/load from.
+
+#### Timing from Rajit
+
+- more than 4 parallel units, +1 cycle. After that, extra cycles proportional to log number of units: latency = $\log n /\log 4$. For log base 2, $\log n / \log 4 = \log n / 2​$
+- load/stores/connects are 1 cycle. execute is 3 cycles.
+
 ## Meeting Notes
 
 ### 30 Aug
@@ -621,6 +641,20 @@ branch point is in the gem5 memory unit
 variable latency load. store the arguments, load the answer! don’t have to worry about waiting.
 
 final deliverable: presentation & research paper; include LLVM.
+
+### 3 Apr
+
+Due dates?
+
+possibly attach BEFORE TLB. Because then everything is in virtual. this will make everything faster. only need to pass POINTER of array, in local process, to FU. look at the gem5 TLB. KEPP what i have right now. but also...
+
+i need TWO components. one to “start” the FU. (this is physical, post TLB, mmap)
+
+SECOND component resides pre-TLB, gets addresses. careful: TLB miss. (page boundary, un-translated pointer yet). how to handle: pin page. this is on the OS end. do this with `mlock` or so. *do this once everything else is working*
+
+software square root reason why so many instructions?
+
+first slot: which function, then arguments.
 
 ## Reading Notes
 
