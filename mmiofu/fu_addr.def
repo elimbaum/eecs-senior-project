@@ -1,8 +1,0 @@
-# FU address space definitions
-# Syntax:
-#   NAME TYPE [N]
-# Optional N parameter for arrays of TYPE
-
-HYPOT_A double
-HYPOT_B double
-HYPOT_C double

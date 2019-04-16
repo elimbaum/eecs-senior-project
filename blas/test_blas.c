@@ -10,4 +10,8 @@ int main()
   printf("nrm: %f\n", cblas_dnrm2(6, A, 1));
   printf("sum: %f\n", cblas_dasum(6, A, 1));
   printf("max: %d\n", cblas_idamax(6, A, 1));
+  printf("\n");
+  printf("dot: %f\n", cblas_ddot(6, A, 1, B, 1));
+  printf("scal: XXX\n");
+  printf("axpy: XXX\n");
 }

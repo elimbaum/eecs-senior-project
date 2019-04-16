@@ -51,13 +51,42 @@ std::map<std::string, std::pair<RetType, std::vector<ArgType>>> functions = {
 namespace {
   struct CallReplPass : public FunctionPass {
     static char ID;
+
+    FunctionType * memcpyTy;
     Constant * IO_Map_Ptr;
+    Value * io_map;
+
     CallReplPass() : FunctionPass(ID) {}
+
+    void sendScalar(IRBuilder<> Bldr, int array_idx, Value * v) {
+      Value * array_loc = Bldr.CreateInBoundsGEP(io_map, Bldr.getInt64(array_idx));
+      // TODO: v could be double or int?
+      Value * dbl_arg = Bldr.CreateUIToFP(v, Bldr.getDoubleTy());
+      Bldr.CreateStore(dbl_arg, array_loc);
+    }
+
+    void sendVector(IRBuilder<> Bldr, Value * dest, Value * src, Value * size) {
+      Value * array_loc = Bldr.CreateInBoundsGEP(io_map, dest);
+      Value * array_len =
+        Bldr.CreatePtrToInt(
+            Bldr.CreateInBoundsGEP(
+              ConstantPointerNull::get(Type::getDoublePtrTy(Bldr.getContext())), size),
+            Bldr.getInt32Ty());
+      Value * arg_list[] = {array_loc, src, array_len};
+      Bldr.CreateCall(Bldr.GetInsertBlock()->getModule()->
+          getOrInsertFunction("memcpy", memcpyTy), arg_list);
+    }
+
 
     bool doInitialization(Module &M) {
       // TODO may only want to create this if any relevant functions are called
-      
       LLVMContext& Ctx = M.getContext();
+
+      memcpyTy = FunctionType::get(
+        Type::getInt64PtrTy(Ctx),
+        {Type::getDoublePtrTy(Ctx), Type::getDoublePtrTy(Ctx), Type::getInt32Ty(Ctx)},
+        false);
+      
       // TODO why is this an 8-bit ptr?
       IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(Ctx));
 
@@ -68,25 +97,26 @@ namespace {
     }
 
     bool runOnFunction(Function &F) {
-      LLVMContext& Ctx = F.getContext();
       bool modified = false;
 
       if (F.getName() == "main") {
         errs() << "[PASS] Trying to create initial map...\n";
+
+        // Make this the first line of main (first front gets BB, second gets Inst)
+        IRBuilder<> Bldr(& F.front().front());
+
         // TODO actual function type is void, not bool. but that doesn't compile
         // due to some kind of debuginfo inlining issue. falsely declaring the
         // return type doesn't appear to affect anything, since the "return
         // value" is never used.
-        FunctionType * FTy = FunctionType::get(Type::getInt1Ty(Ctx), false);
+        FunctionType * FTy = FunctionType::get(Bldr.getInt1Ty(), false);
         FunctionCallee mapFunc = F.getParent()->getOrInsertFunction("_create_io_map", FTy);
 
-        // Make this the first line of main (first front gets BB, second gets Inst)
-        IRBuilder<> builder(& F.front().front());
-
-        auto map_call = builder.CreateCall(mapFunc);
-        // map_call->setDebugLoc(builder.getCurrentDebugLocation());
+        auto map_call = Bldr.CreateCall(mapFunc);
+        // map_call->setDebugLoc(Bldr.getCurrentDebugLocation());
         verifyFunction(F);
         errs() << "[PASS] Created map call\n";
+        modified = true;
       }
 
       for (inst_iterator I = inst_begin(F); I != inst_end(F); ++I) {
@@ -123,89 +153,55 @@ namespace {
           }
           errs() << "\n";
 
-          IRBuilder<> builder(call);
+          IRBuilder<> Bldr(call);
           
           // move insertion point after call -- not sure if necessary
-          builder.SetInsertPoint(call->getParent(), ++builder.GetInsertPoint());
+          Bldr.SetInsertPoint(call->getParent(), ++Bldr.GetInsertPoint());
 
           // load the io_map array
           // TODO only load io_map once per function
-          Value * io_map = builder.CreateBitCast(
-                             builder.CreateLoad(Type::getInt8PtrTy(Ctx), IO_Map_Ptr),
-                             Type::getDoublePtrTy(Ctx));
+          io_map = Bldr.CreateBitCast(
+                             Bldr.CreateLoad(Bldr.getInt8PtrTy(), IO_Map_Ptr),
+                             Type::getDoublePtrTy(Bldr.getContext()));
 
           Value * N;
+          Value * user_X;
+          Value * X_start_loc = Bldr.getInt64(IDX_START_X);
 
           // loop through arguments
           // TODO this is really messy.
           auto i = argv.begin();
           auto arg = call->arg_begin();
           for (; i != argv.end() && arg != call->arg_end(); ++i, ++arg) {
-
-            // default array index is for alpha to allow case fallthrough
-            auto scalar_idx = IDX_ALPHA;
-            auto vector_idx = IDX_START_X; // TODO don't actually know where Y is at compile time
-
             // check which argument this is
-            switch(*i) {
-              case ARG_N:
-                scalar_idx = IDX_N;
-                N = arg->get();
-                // fall through
-              case ARG_ALPHA:
-                {
-                  Value * array_loc = builder.CreateInBoundsGEP(io_map,
-                      ConstantInt::get(Ctx, APInt(64, scalar_idx, true)));
-                  Value * d_arg = builder.CreateUIToFP(arg->get(), Type::getDoubleTy(Ctx));
-                  builder.CreateStore(d_arg, array_loc);
-                }
-                break;
-
-              case ARG_X:
-                vector_idx = IDX_START_X;
-              case ARG_Y:
-                {
-                  // copy over each element... memcpy call
-                  // void * memcpy(void *, void *, size_t)
-                  
-                  Value * array_loc = builder.CreateInBoundsGEP(io_map,
-                        ConstantInt::get(Ctx, APInt(64, vector_idx, true)));
-                  Value * array_len = 
-                    builder.CreatePtrToInt(
-                      builder.CreateInBoundsGEP(
-                        ConstantPointerNull::get(Type::getDoublePtrTy(Ctx)), N),
-                      Type::getInt32Ty(Ctx));
-
-                  Type * arg_ty_list[] = {Type::getDoublePtrTy(Ctx), Type::getDoublePtrTy(Ctx), Type::getInt32Ty(Ctx)};
-                  FunctionType * FTy = FunctionType::get(Type::getInt64PtrTy(Ctx), arg_ty_list, false);
-                  Value * arg_list[] = {array_loc, arg->get(), array_len};
-                  builder.CreateCall(F.getParent()->getOrInsertFunction("memcpy", FTy), arg_list);
-
-                  // eat inc_x / inc_y
-                  ++arg;
-                }
-
-                break;
-
-
+            if (*i == ARG_N) {
+              N = arg->get();
+              sendScalar(Bldr, IDX_N, N);
+            } else if (*i == ARG_ALPHA) {
+              sendScalar(Bldr, IDX_ALPHA, arg->get());
+            } else if (*i == ARG_X) {
+              user_X = arg->get();
+              sendVector(Bldr, X_start_loc, user_X, N);
+              ++arg; // eat INC_X
+            } else if (*i == ARG_Y) {
+              sendVector(Bldr, Bldr.CreateAdd(X_start_loc, N), arg->get(), N);
+              ++arg; // eat INC_Y
             }
-            // get array index
-            // store
-            // for arrays: loop through and copy
           }
 
           // run function! (store function ID into array)
-          Value * func_idx = builder.CreateInBoundsGEP(io_map,
-              ConstantInt::get(Ctx, APInt(64, IDX_FUNCTION, true)));
-          builder.CreateStore(ConstantFP::get(Ctx, APFloat((double)func_id)), func_idx);
+          Value * func_idx = Bldr.CreateInBoundsGEP(io_map, Bldr.getInt64(IDX_FUNCTION));
+          Bldr.CreateStore(ConstantFP::get(Bldr.getContext(), APFloat((double)func_id)), func_idx);
 
-          if (ret != RET_VOID) {
-            Value * r = builder.CreateLoad(
-                builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, IDX_ALPHA, true))),
-                oldF->getName() + "_ret");
+          if (ret == RET_VOID) {
+            // non-returning subroutines modify X; must copy back
+          } else {
+            // get result from alpha
+            Value * r = Bldr.CreateLoad(
+                Bldr.CreateInBoundsGEP(io_map, Bldr.getInt64(IDX_ALPHA)));
 
             if (ret == RET_INT) {
-              r = builder.CreateFPToSI(r, Type::getInt32Ty(Ctx));
+              r = Bldr.CreateFPToSI(r, Bldr.getInt32Ty());
             }
             // ret == RET_DOUBLE: nop, already have a double
             
@@ -214,27 +210,7 @@ namespace {
               User * user = U.getUser();
               user->setOperand(U.getOperandNo(), r);
             }
-          }
-          // if no return, need to copy X back!
-
-          // test with hypot
-          /*
-          // To specify multiple indices:
-          // Value * idx_list[] = {ConstantInt::get(Ctx, APInt(64, 0, true))};
-          // Value * A = builder.CreateGEP(io_map, idx_list);
-          Value * A = builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 0, true)));
-          Value * B = builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 1, true)));
-
-          auto arg = call->arg_begin();
-          builder.CreateStore(arg->get(), A);
-          arg++; // next arg
-          builder.CreateStore(arg->get(), B);
-
-          // get return
-          Value * C = builder.CreateLoad(
-              builder.CreateInBoundsGEP(io_map, ConstantInt::get(Ctx, APInt(64, 2, true))));
-
-          */
+          } 
 
           // delete old call
           call->eraseFromParent();
@@ -242,7 +218,6 @@ namespace {
           I = --next_inst;
           verifyFunction(F);
           modified = true;
-          // TODO i think i need to advance the iterator to AFTER 
           // errs() << F;
         }
       }
