@@ -191,15 +191,25 @@ MMIOFU::handleRequest(PacketPtr pkt)
 
     default:
       // invalid, or X or Y
-      // TODO for scal and axpy, will need read/write check here
+      uint8_t * addr_p;
       if (GET_INDEX(addr) < IDX_START_X + _N) {
-        DPRINTF(MMIOFU, "X: %x => %d => %d (size %d)\n",
-            addr, GET_INDEX(addr), GET_INDEX(addr) - IDX_START_X, pkt->getSize());
-        pkt->writeDataToBlock((uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]), pkt->getSize());
+        DPRINTF(MMIOFU, "X: %x => %d\n", addr, GET_INDEX(addr) - IDX_START_X);
+        addr_p = (uint8_t *)&(_X[GET_INDEX(addr) - IDX_START_X]);
       } else if (GET_INDEX(addr) < IDX_START_X + 2 * _N) {
         DPRINTF(MMIOFU, "Y: %x => %d\n", addr, GET_INDEX(addr) - IDX_START_X - _N);
-        pkt->writeDataToBlock((uint8_t *)&(_Y[GET_INDEX(addr) - IDX_START_X - _N]),
-            (int)sizeof(double));
+        addr_p = (uint8_t *)&(_Y[GET_INDEX(addr) - IDX_START_X - _N]);
+      } else {
+        panic("Invalid address");
+      }
+
+      if (pkt->isWrite()) {
+        pkt->writeData(addr_p);
+        DPRINTF(MMIOFU, "WRITE\n");
+      } else if (pkt->isRead()) {
+        pkt->setData(addr_p);
+        DPRINTF(MMIOFU, "READ\n");
+      } else {
+        panic("Invalid packet type");
       }
       break;
   }
@@ -250,34 +260,6 @@ MMIOFU::handleFunctional(PacketPtr pkt)
     memPort.sendFunctional(pkt);
   }
 }
-
-/*
-#define BASE_ADDR 0xFFFEF000
-double A, B;
-
-void
-MMIOFU::accessTiming(PacketPtr pkt)
-{
-  DPRINTF(MMIOFU, "AT / packet: %s\n", pkt->print());
-
-  if (pkt->getAddr() == BASE_ADDR + 0 * sizeof(double)) {
-    pkt->writeDataToBlock((uint8_t *) &A, (int)sizeof(double));
-    DPRINTF(MMIOFU, "Got A: %d\n", A);
-  } else if (pkt->getAddr() == BASE_ADDR + 1 * sizeof(double)) {
-    pkt->writeDataToBlock((uint8_t *) &B, (int)sizeof(double));
-    DPRINTF(MMIOFU, "Got B: %d\n", B);
-  } else if (pkt->getAddr() == BASE_ADDR + 2 * sizeof(double)) {
-    // do the computation!
-    // TODO have some kind of flag so we don't accidentally return old results
-    double C = sqrt(A * A + B * B);
-    pkt->setDataFromBlock((uint8_t *) &C, (int)sizeof(double));
-    DPRINTF(MMIOFU, "Sent C: %d\n", C);
-  }
-    
-  pkt->makeResponse();
-  sendResponse(pkt);
-  DPRINTF(MMIOFU, "end of AT\n");
-} */
 
 bool
 MMIOFU::accessFunctional(PacketPtr pkt)

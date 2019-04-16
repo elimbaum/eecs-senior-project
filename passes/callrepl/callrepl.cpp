@@ -38,9 +38,10 @@ enum ArgType {
 // TODO maybe this map could be combined with the array in blas_operation.h
 // TODO somehow need to get indices from the header file
 // TODO this should be a struct, maybe
+// daxpy X/Y are swapped so that X remains as the modified array
 std::map<std::string, std::pair<RetType, std::vector<ArgType>>> functions = {
   {"cblas_dscal",  {RET_VOID  , { ARG_N, ARG_ALPHA, ARG_X        }}},
-  {"cblas_daxpy",  {RET_VOID  , { ARG_N, ARG_ALPHA, ARG_X, ARG_Y }}},
+  {"cblas_daxpy",  {RET_VOID  , { ARG_N, ARG_ALPHA, ARG_Y, ARG_X }}},
   {"cblas_ddot",   {RET_DOUBLE, { ARG_N,            ARG_X, ARG_Y }}},
   {"cblas_dnrm2",  {RET_DOUBLE, { ARG_N,            ARG_X        }}},
   {"cblas_dasum",  {RET_DOUBLE, { ARG_N,            ARG_X        }}},
@@ -52,7 +53,6 @@ namespace {
   struct CallReplPass : public FunctionPass {
     static char ID;
 
-    FunctionType * memcpyTy;
     Constant * IO_Map_Ptr;
     Value * io_map;
 
@@ -65,30 +65,31 @@ namespace {
       Bldr.CreateStore(dbl_arg, array_loc);
     }
 
-    void sendVector(IRBuilder<> Bldr, Value * dest, Value * src, Value * size) {
-      Value * array_loc = Bldr.CreateInBoundsGEP(io_map, dest);
-      Value * array_len =
+    void MemCpyWrapper(IRBuilder<> Bldr, Value * dest, Value * src, Value * len) {
+      // Compute size (in bytes) of the array. Thisis just len * sizeof(double)
+      Value * array_size =
         Bldr.CreatePtrToInt(
             Bldr.CreateInBoundsGEP(
-              ConstantPointerNull::get(Type::getDoublePtrTy(Bldr.getContext())), size),
+              ConstantPointerNull::get(Type::getDoublePtrTy(Bldr.getContext())), len),
             Bldr.getInt32Ty());
-      Value * arg_list[] = {array_loc, src, array_len};
-      Bldr.CreateCall(Bldr.GetInsertBlock()->getModule()->
-          getOrInsertFunction("memcpy", memcpyTy), arg_list);
+      Bldr.CreateMemCpy(dest, 0, src, 0, array_size);
+    }
+
+    void recvVector(IRBuilder<> Bldr, Value * dest, Value * src_i, Value * len) {
+      Value * src = Bldr.CreateInBoundsGEP(io_map, src_i);
+      MemCpyWrapper(Bldr, dest, src, len);
+    }
+
+    void sendVector(IRBuilder<> Bldr, Value * dest_i, Value * src, Value * len) {
+      Value * dest = Bldr.CreateInBoundsGEP(io_map, dest_i);
+      MemCpyWrapper(Bldr, dest, src, len);
     }
 
 
     bool doInitialization(Module &M) {
-      // TODO may only want to create this if any relevant functions are called
-      LLVMContext& Ctx = M.getContext();
-
-      memcpyTy = FunctionType::get(
-        Type::getInt64PtrTy(Ctx),
-        {Type::getDoublePtrTy(Ctx), Type::getDoublePtrTy(Ctx), Type::getInt32Ty(Ctx)},
-        false);
-      
+      // TODO may only want to create this call if any relevant functions are called
       // TODO why is this an 8-bit ptr?
-      IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(Ctx));
+      IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(M.getContext()));
 
       // TODO if mapping goes wrong at any point, fall back to original function
       //   this would require conditionals on every instruction. might not be
@@ -166,7 +167,7 @@ namespace {
 
           Value * N;
           Value * user_X;
-          Value * X_start_loc = Bldr.getInt64(IDX_START_X);
+          Value * X_start_i = Bldr.getInt64(IDX_START_X);
 
           // loop through arguments
           // TODO this is really messy.
@@ -181,10 +182,10 @@ namespace {
               sendScalar(Bldr, IDX_ALPHA, arg->get());
             } else if (*i == ARG_X) {
               user_X = arg->get();
-              sendVector(Bldr, X_start_loc, user_X, N);
+              sendVector(Bldr, X_start_i, user_X, N);
               ++arg; // eat INC_X
             } else if (*i == ARG_Y) {
-              sendVector(Bldr, Bldr.CreateAdd(X_start_loc, N), arg->get(), N);
+              sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), arg->get(), N);
               ++arg; // eat INC_Y
             }
           }
@@ -195,6 +196,7 @@ namespace {
 
           if (ret == RET_VOID) {
             // non-returning subroutines modify X; must copy back
+            recvVector(Bldr, user_X, X_start_i, N);
           } else {
             // get result from alpha
             Value * r = Bldr.CreateLoad(

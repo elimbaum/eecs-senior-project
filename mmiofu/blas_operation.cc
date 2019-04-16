@@ -6,9 +6,10 @@ double _dscal(int N, double alpha, double * X, double * Y) {
   return 0;
 }
 
+// DAXPY swaps arguments to keep X as the modified value
 double _daxpy(int N, double alpha, double * X, double * Y) {
   cout << "_daxpy\n";
-  cblas_daxpy(N, alpha, X, INC_X, Y, INC_Y);
+  cblas_daxpy(N, alpha, Y, INC_Y, X, INC_X);
   return 0;
 }
 

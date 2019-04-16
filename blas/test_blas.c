@@ -1,6 +1,14 @@
 #include <cblas.h>
 #include <stdio.h>
 
+void print_vec(int len, double * V)
+{
+  for (int i = 0; i < len; i++) {
+    printf("%f ", V[i]);
+  }
+  printf("\n");
+}
+
 int main()
 {
   double A[6] = {1.5, 2.0, 1.0, -3.0, 4.0, -1.0};
@@ -10,8 +18,10 @@ int main()
   printf("nrm: %f\n", cblas_dnrm2(6, A, 1));
   printf("sum: %f\n", cblas_dasum(6, A, 1));
   printf("max: %d\n", cblas_idamax(6, A, 1));
-  printf("\n");
-  printf("dot: %f\n", cblas_ddot(6, A, 1, B, 1));
-  printf("scal: XXX\n");
-  printf("axpy: XXX\n");
+  printf("\ndot: %f\n", cblas_ddot(6, A, 1, B, 1));
+  printf("\nA:    "); print_vec(6, A);
+  cblas_dscal(6, 2.0, A, 1);
+  printf("scal: "); print_vec(6, A);
+  cblas_daxpy(6, 1.4, B, 1, A, 1);
+  printf("axpy: "); print_vec(6, A);
 }
