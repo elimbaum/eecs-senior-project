@@ -135,8 +135,11 @@ MMIOFU::handleRequest(PacketPtr pkt)
     return false;
   }
 
-  DPRINTF(MMIOFU, "Request for addr  %#x\n", pkt->getAddr());
+  // DPRINTF(MMIOFU, "Request for addr  %#x\n", pkt->getAddr());
   blocked = true;
+
+  // all communication operations take 1 cycle except for function execute
+  int latency = 1;
   
   // do computation here
   auto addr = pkt->getAddr();
@@ -158,11 +161,12 @@ MMIOFU::handleRequest(PacketPtr pkt)
           // can't actually do this: responding to a WRITE. needs to be next call, or put it in alpha.
           // TODO: need distinction between READ and WRITE for alpha/X/Y; maybe all.
           if (op.returns) {
-            _alpha = op.func(_N, _alpha, _X, _Y);
+            _alpha = op.func(_N, _alpha, _X, _Y, &latency);
             DPRINTF(MMIOFU, "ret: %d\n", _alpha);
           } else {
-            op.func(_N, _alpha, _X, _Y);
+            op.func(_N, _alpha, _X, _Y, &latency);
           }
+          DPRINTF(MMIOFU, "latency: %d\n", latency);
         } else if (pkt->isRead()) {
           DPRINTF(MMIOFU, "cannot read function index");
         }
@@ -171,6 +175,8 @@ MMIOFU::handleRequest(PacketPtr pkt)
 
     case GET_ADDR(IDX_ALPHA):
       if (pkt->isWrite()) {
+        // TODO these are communication latencies, not register latencies.
+        // how to represent?
         pkt->writeDataToBlock((uint8_t *)&_alpha, (int)sizeof(double));
         DPRINTF(MMIOFU, "  Received alpha: %f\n", _alpha);
       } else if (pkt->isRead()) {
@@ -186,6 +192,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
       DPRINTF(MMIOFU, "  Setting N %d (new size: %d)\n", _N, _N * sizeof(double));
       _X = (double *)realloc(_X, _N * sizeof(double));
       _Y = (double *)realloc(_Y, _N * sizeof(double));
+
       // TODO bounds check on N
       break;
 
@@ -219,12 +226,12 @@ MMIOFU::handleRequest(PacketPtr pkt)
   // figure out timing
   // schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
   //                                  name() + ".accessEvent", true),
-  //          clockEdge(Cycles(0)));
+  //          clockEdge(ycles(0)));
 
   // Schedule the response based on 
   schedule(new EventFunctionWrapper([this, pkt]{ sendResponse(pkt); },
                                     name() + ".responseEvent", true),
-           clockEdge(Cycles(5)));
+           clockEdge(Cycles(latency)));
 
   return true;
 }
