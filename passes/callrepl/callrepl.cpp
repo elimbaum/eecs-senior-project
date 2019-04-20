@@ -87,18 +87,14 @@ namespace {
 
 
     bool doInitialization(Module &M) {
-      // TODO may only want to create this call if any relevant functions are called
-      // TODO why is this an 8-bit ptr?
+      // I don't fully understand why this is an 8-bit pointer, but it is
       IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(M.getContext()));
-
-      // TODO if mapping goes wrong at any point, fall back to original function
-      //   this would require conditionals on every instruction. might not be
-      //   worth -- map should die instead
       return true;
     }
 
     bool runOnFunction(Function &F) {
       bool modified = false;
+      bool io_map_loaded = false;
 
       if (F.getName() == "main") {
         // errs() << "[PASS] Trying to create initial map...\n";
@@ -161,11 +157,13 @@ namespace {
           // move insertion point after call -- not sure if necessary
           Bldr.SetInsertPoint(call->getParent(), ++Bldr.GetInsertPoint());
 
-          // load the io_map array
-          // TODO only load io_map once per function
-          io_map = Bldr.CreateBitCast(
-                             Bldr.CreateLoad(Bldr.getInt8PtrTy(), IO_Map_Ptr),
-                             Type::getDoublePtrTy(Bldr.getContext()));
+          // load the io_map array if it hasn't already
+          if (! io_map_loaded) {
+            io_map = Bldr.CreateBitCast(
+                               Bldr.CreateLoad(Bldr.getInt8PtrTy(), IO_Map_Ptr),
+                               Type::getDoublePtrTy(Bldr.getContext()));
+            io_map_loaded = true;
+          }
 
           Value * N;
           Value * user_X;

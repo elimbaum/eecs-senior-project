@@ -15,7 +15,7 @@ double _dscal(int N, double alpha, double * X, double * Y, int * latency) {
     X[i] = rX.get();
   }
 
-  m.print_stats();
+
 
   *latency = m.get_cycles() + rX.get_cycles() + rK.get_cycles();
 
@@ -38,7 +38,7 @@ double _daxpy(int N, double alpha, double * X, double * Y, int * latency) {
     Y[i] = rY.get();
   }
 
-  m.print_stats();
+
   *latency = m.get_cycles() + rX.get_cycles() + rY.get_cycles() + rA.get_cycles();
 
   //cblas_daxpy(N, alpha, Y, INC_Y, X, INC_X);
@@ -56,7 +56,7 @@ double _ddot(int N, double alpha, double * X, double * Y, int * latency) {
     M.execute();
   }
   double r = total.get();
-  M.print_stats();
+
   *latency = M.get_cycles() + total.get_cycles() + rA.get_cycles() + rB.get_cycles();
   return r;
 }
@@ -92,14 +92,13 @@ double _dnrm2(int N, double alpha, double * X, double * Y, int * latency) {
   mA.connect(&rX, &rS, &rR); // x + S/x
 
   for (int i = 0; i < SQRT_ITERS; i++) {
-    cout << "sqrt " << rX.get() << "\n";
     rR.set(1 / rX.get()); // 2 cycles
     mA.execute();
     rX.set(rX.get() / 2); // 1 cycle
   }
 
   double r = rX.get();
-  mA.print_stats();
+
   // add extra cycles for 1/X and X/2 (per iter) and one for estimate
   *latency = mA.get_cycles() + rX.get_cycles() + rS.get_cycles() + rR.get_cycles() +
              SQRT_ITERS * 3 + 1;
@@ -118,7 +117,6 @@ double _dasum(int N, double alpha, double * X, double * Y, int * latency) {
     S.execute();
   }
   double r = total.get();
-  S.print_stats();
   *latency = S.get_cycles() + total.get_cycles() + V.get_cycles() + one.get_cycles();
   return r;
 }

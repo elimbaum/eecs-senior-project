@@ -31,4 +31,4 @@ void _create_io_map()
   // fprintf(stderr, "Success mapping: %p => %#x\n", _io_map, IO_PAGE);
 }
 
-// TODO: do I have to worry about munmap()? Should get closed automatically on exit
+// closed automatically on exit

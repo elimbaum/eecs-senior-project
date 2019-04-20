@@ -156,10 +156,6 @@ MMIOFU::handleRequest(PacketPtr pkt)
           op = operations[(int) func_idx];
           DPRINTF(MMIOFU, "... %s\n", op.cblas_name.c_str());
 
-          // if function returns, return value. otherwise ignore it (probably garbage)
-          // TODO: is this ok? segfault risk?
-          // can't actually do this: responding to a WRITE. needs to be next call, or put it in alpha.
-          // TODO: need distinction between READ and WRITE for alpha/X/Y; maybe all.
           if (op.returns) {
             _alpha = op.func(_N, _alpha, _X, _Y, &latency);
             DPRINTF(MMIOFU, "ret: %d\n", _alpha);
@@ -168,7 +164,7 @@ MMIOFU::handleRequest(PacketPtr pkt)
           }
           DPRINTF(MMIOFU, "latency: %d\n", latency);
         } else if (pkt->isRead()) {
-          DPRINTF(MMIOFU, "cannot read function index");
+          DPRINTF(MMIOFU, "cannot read function id");
         }
       }
       break;
@@ -193,7 +189,10 @@ MMIOFU::handleRequest(PacketPtr pkt)
       _X = (double *)realloc(_X, _N * sizeof(double));
       _Y = (double *)realloc(_Y, _N * sizeof(double));
 
-      // TODO bounds check on N
+      if ((_N * 2 + IDX_START_X) * sizeof(double) >= PAGE_LEN) {
+        panic("Vector too large");
+      }
+
       break;
 
     default:
