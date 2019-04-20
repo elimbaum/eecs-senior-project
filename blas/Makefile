@@ -1,6 +1,8 @@
 CC=clang
+CXX=clang++
 GEM5=~/gem5/util/m5
 CFLAGS=-g3 -pedantic -Wall -I ~/gem5/include/ -I $(GEM5)
+CXXFLAGS=-g3 -pedantic -Wall
 LDLIBS=-lopenblas -lpthread -lm $(GEM5)/m5_mmap.o $(GEM5)/m5op_x86.o
 
 .FORCE: ;
@@ -15,7 +17,7 @@ angle.in: .FORCE;
 	$(CC) $< $(CFLAGS) -DSIMULATED -emit-llvm -S -o $@
 
 %_edit: %_edit_linked.ll
-	clang $< -static $(LDLIBS) -o $@
+	clang++ $< -static $(LDLIBS) -o $@
 
 %_linked.ll: ~/sproj-git/mmiofu/fu_mmap.ll %.ll
 	llvm-link $^ -S -o $@

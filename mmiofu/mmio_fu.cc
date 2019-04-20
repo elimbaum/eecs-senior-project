@@ -223,11 +223,6 @@ MMIOFU::handleRequest(PacketPtr pkt)
   
   pkt->makeResponse();
 
-  // figure out timing
-  // schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
-  //                                  name() + ".accessEvent", true),
-  //          clockEdge(ycles(0)));
-
   // Schedule the response based on 
   schedule(new EventFunctionWrapper([this, pkt]{ sendResponse(pkt); },
                                     name() + ".responseEvent", true),

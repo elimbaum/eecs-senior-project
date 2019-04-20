@@ -101,7 +101,7 @@ namespace {
       bool modified = false;
 
       if (F.getName() == "main") {
-        errs() << "[PASS] Trying to create initial map...\n";
+        // errs() << "[PASS] Trying to create initial map...\n";
 
         // Make this the first line of main (first front gets BB, second gets Inst)
         IRBuilder<> Bldr(& F.front().front());
@@ -148,11 +148,13 @@ namespace {
           auto ret = signature.first;
           auto argv = signature.second;
 
-          errs() << "[PASS] Found function " << oldF->getName() << " with sig ";
+          errs() << "[PASS] Replacing function " << oldF->getName() << "\n"
+            
+          /* << " with sig ";
           for (auto i = argv.begin(); i != argv.end(); ++i) {
             errs() << *i << " ";
           }
-          errs() << "\n";
+          errs() << "\n"; */
 
           IRBuilder<> Bldr(call);
           
@@ -167,7 +169,7 @@ namespace {
 
           Value * N;
           Value * user_X;
-          Value * X_start_i = Bldr.getInt64(IDX_START_X);
+          Value * X_start_i = Bldr.getInt32(IDX_START_X);
 
           // loop through arguments
           // TODO this is really messy.
