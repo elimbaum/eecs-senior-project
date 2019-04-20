@@ -40,12 +40,12 @@ enum ArgType {
 // TODO this should be a struct, maybe
 // daxpy X/Y are swapped so that X remains as the modified array
 std::map<std::string, std::pair<RetType, std::vector<ArgType>>> functions = {
-  {"cblas_dscal",  {RET_VOID  , { ARG_N, ARG_ALPHA, ARG_X        }}},
-  {"cblas_daxpy",  {RET_VOID  , { ARG_N, ARG_ALPHA, ARG_Y, ARG_X }}},
+  {"cblas_dscal",  {RET_VOID,   { ARG_N, ARG_ALPHA, ARG_X        }}},
+  {"cblas_daxpy",  {RET_VOID,   { ARG_N, ARG_ALPHA, ARG_Y, ARG_X }}},
   {"cblas_ddot",   {RET_DOUBLE, { ARG_N,            ARG_X, ARG_Y }}},
   {"cblas_dnrm2",  {RET_DOUBLE, { ARG_N,            ARG_X        }}},
   {"cblas_dasum",  {RET_DOUBLE, { ARG_N,            ARG_X        }}},
-  {"cblas_idamax", {RET_INT   , { ARG_N,            ARG_X        }}}
+  {"cblas_idamax", {RET_INT,    { ARG_N,            ARG_X        }}}
 };
 
 

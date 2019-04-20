@@ -67,6 +67,7 @@ class MMIOFU : public MemObject
     bool blocked;
 
     blasop op;
+    // TODO look in to this? might need more state variables
     bool dirty;
 
     int _N;

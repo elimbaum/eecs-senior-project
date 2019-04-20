@@ -125,12 +125,13 @@ double _dasum(int N, double alpha, double * X, double * Y, int * latency) {
 // back into an integer for the top-level program
 //
 // this can't be done with Macc. what do?
+// might just forget this for the time being
 double _idamax(int N, double alpha, double * X, double * Y, int * latency) {
   cout << "idamax UNIMPL\n";
 
   // idamax needs to do N compares, as well as anywhere from 1 to N sets.
   // average?
-  // TODO this is definitely not enough
+  // TODO this is definitely not enough; not counting register operations
   *latency = N + N / 2;
   return cblas_idamax(N, X, INC_X);
 }
@@ -146,3 +147,4 @@ blasop operations[] = {
   {"cblas_idamax", true,  & _idamax },
 };
 
+// TODO put an init function in here? hardcode IDs?
