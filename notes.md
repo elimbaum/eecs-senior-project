@@ -92,6 +92,8 @@ Dynamic Binary Translation for Optimized ~~Hardware~~ Functional Units DBTOHFU
 
 Dynamic* Binary Translation for Optimized Functional Units DBTOFU i like that.
 
+C++ test programs won’t work easily because of name mangling. Probably not worth it, especially since makefile becomes messy.
+
 ### Installing LLVM on Zoo
 
 - Install LLVM on zoo
@@ -234,6 +236,14 @@ Still can’t get LLI to run on gem5. going into build.ninja (hacky) and removin
 Another issue: only 13M free on disk, lli is ~30M (static & dynamic). So I will need to figure out the disk image resizing thing.
 
 ok, so initial hyp test (with MMIOFU) looks like we save about 1,887,905 cycles (1887905451 ticks) per calculation (ran 1000 total on that test.) that doesn’t totally seem right. Hm. Not sure what tick/cycle/time exchange is. Saved 19894 instructions per iter? That makes a little more sense. function call, floating point math, square root? I would have though more of these were native but I guess not. so even say 40 iterations (pretty accurate) of square root, that looks like around 160 reg read/80 write on X. That’s 80 mac executions, maybe 1000 register access conservative. call it 100/1000. reg access can be 1 cycle. mac execute… 10 cycles? so that’s 2000 cycles. could be huge savings. *Rajit has sent me timings*
+
+Can’t run native CBLAS on gem5 because FSQRT not implemented. X86 instruction. will need to add that; estimate latency? did it, just by adding the instruction. no idea about timing. the code’s a bit weird… had to specify the same register three times:
+
+```
+sqrtfp st(0), st(0), st(0)
+```
+
+Even though only two of those should be necessary. 
 
 ### mmap
 
@@ -381,7 +391,7 @@ void dot(int N, double * A, double * B) {
             if (M * i + j >= N) break;
             
             // these would run in parallel
-			MAC(& r[j], A[M * i + j], B[M * i + j]);
+						MAC(& r[j], A[M * i + j], B[M * i + j]);
         }
     }
     
@@ -459,9 +469,11 @@ is this the best way to do it? if i’m passing the same arguments to everyone�
 
 also need to write back modified arrays! Need to keep an internal array to store/load from.
 
+save connection times by creating a bunch of hard-wired MACCs for each function. actually, only need 1 MACC for most, 2 for nrm
+
 #### Timing from Rajit
 
-- more than 4 parallel units, +1 cycle. After that, extra cycles proportional to log number of units: latency = $\log n /\log 4$. For log base 2, $\log n / \log 4 = \log n / 2​$
+- more than 4 parallel units, +1 cycle. After that, extra cycles proportional to log number of units: latency = $\log n /\log 4​$. For log base 2, $\log n / \log 4 = \log n / 2​$
 - load/stores/connects are 1 cycle. execute is 3 cycles.
 
 ## Meeting Notes
