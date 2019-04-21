@@ -14,40 +14,12 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
-#include "blas_operation.h"
+#include "blop.hh"
 #include "fu_mmap.h"
 
 using namespace llvm;
 
 extern char * _io_map;
-extern blasop operations[]; 
-
-enum RetType {
-  RET_VOID,
-  RET_DOUBLE,
-  RET_INT
-};
-
-enum ArgType {
-  ARG_N,
-  ARG_ALPHA,
-  ARG_X,
-  ARG_Y
-};
-
-// TODO maybe this map could be combined with the array in blas_operation.h
-// TODO somehow need to get indices from the header file
-// TODO this should be a struct, maybe
-// daxpy X/Y are swapped so that X remains as the modified array
-std::map<std::string, std::pair<RetType, std::vector<ArgType>>> functions = {
-  {"cblas_dscal",  {RET_VOID,   { ARG_N, ARG_ALPHA, ARG_X        }}},
-  {"cblas_daxpy",  {RET_VOID,   { ARG_N, ARG_ALPHA, ARG_Y, ARG_X }}},
-  {"cblas_ddot",   {RET_DOUBLE, { ARG_N,            ARG_X, ARG_Y }}},
-  {"cblas_dnrm2",  {RET_DOUBLE, { ARG_N,            ARG_X        }}},
-  {"cblas_dasum",  {RET_DOUBLE, { ARG_N,            ARG_X        }}},
-  {"cblas_idamax", {RET_INT,    { ARG_N,            ARG_X        }}}
-};
-
 
 namespace {
   struct CallReplPass : public FunctionPass {
@@ -88,7 +60,12 @@ namespace {
 
     bool doInitialization(Module &M) {
       // I don't fully understand why this is an 8-bit pointer, but it is
-      IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(M.getContext()));
+      IO_Map_Ptr = M.getOrInsertGlobal("_io_map", Type::getInt8PtrTy(M.getContext())); 
+
+      // Load the operations
+      errs() << "[PASS] init\n";
+      BlasOperation::init();
+
       return true;
     }
 
@@ -120,44 +97,22 @@ namespace {
         if (auto * call = dyn_cast<CallInst>(&*I)) {
           Function * oldF = call->getCalledFunction();
 
-          auto it = functions.find(oldF->getName());
-          if (it == functions.end()) {
+          auto op = BlasOperation::find(oldF->getName());
+          if (!op) {
             // This function not found.
             // errs() << "Couldn't find function " << oldF->getName() << " in map.\n";
             continue;
           }
+          errs() << "[PASS] Replacing function @ " << op->cblas_name << "\n";
 
-          // look for the index
-          int func_id;
-          for (func_id = 0; func_id < NUM_FUNCS; func_id++) {
-            if (operations[func_id].cblas_name == oldF->getName())
-              break;
-          }
-          if (func_id == NUM_FUNCS) {
-            errs() << "[PASS] Couldn't find function " << oldF->getName() << " in op array.\n";
-            continue;
-          }
-
+          // save next instruction so can restore later
           auto next_inst = ++I;
-
-          auto signature = it->second;
-          auto ret = signature.first;
-          auto argv = signature.second;
-
-          errs() << "[PASS] Replacing function " << oldF->getName() << "\n"
-            
-          /* << " with sig ";
-          for (auto i = argv.begin(); i != argv.end(); ++i) {
-            errs() << *i << " ";
-          }
-          errs() << "\n"; */
-
           IRBuilder<> Bldr(call);
           
           // move insertion point after call -- not sure if necessary
           Bldr.SetInsertPoint(call->getParent(), ++Bldr.GetInsertPoint());
 
-          // load the io_map array if it hasn't already
+          // load the io_map array if it hasn't been already
           if (! io_map_loaded) {
             io_map = Bldr.CreateBitCast(
                                Bldr.CreateLoad(Bldr.getInt8PtrTy(), IO_Map_Ptr),
@@ -170,21 +125,22 @@ namespace {
           Value * X_start_i = Bldr.getInt32(IDX_START_X);
 
           // loop through arguments
-          // TODO this is really messy.
-          auto i = argv.begin();
+          // op->argv is the internal map for looking up signatures
+          // call->arg... is the arguments in the actual function call
+          auto i = op->argv.begin();
           auto arg = call->arg_begin();
-          for (; i != argv.end() && arg != call->arg_end(); ++i, ++arg) {
+          for (; i != op->argv.end() && arg != call->arg_end(); ++i, ++arg) {
             // check which argument this is
-            if (*i == ARG_N) {
+            if (*i == Arg::N) {
               N = arg->get();
               sendScalar(Bldr, IDX_N, N);
-            } else if (*i == ARG_ALPHA) {
+            } else if (*i == Arg::ALPHA) {
               sendScalar(Bldr, IDX_ALPHA, arg->get());
-            } else if (*i == ARG_X) {
+            } else if (*i == Arg::X) {
               user_X = arg->get();
               sendVector(Bldr, X_start_i, user_X, N);
               ++arg; // eat INC_X
-            } else if (*i == ARG_Y) {
+            } else if (*i == Arg::Y) {
               sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), arg->get(), N);
               ++arg; // eat INC_Y
             }
@@ -192,9 +148,9 @@ namespace {
 
           // run function! (store function ID into array)
           Value * func_idx = Bldr.CreateInBoundsGEP(io_map, Bldr.getInt64(IDX_FUNCTION));
-          Bldr.CreateStore(ConstantFP::get(Bldr.getContext(), APFloat((double)func_id)), func_idx);
+          Bldr.CreateStore(ConstantFP::get(Bldr.getContext(), APFloat((double)op->id)), func_idx);
 
-          if (ret == RET_VOID) {
+          if (op->ret == RetTy::VOID) {
             // non-returning subroutines modify X; must copy back
             recvVector(Bldr, user_X, X_start_i, N);
           } else {
@@ -202,7 +158,7 @@ namespace {
             Value * r = Bldr.CreateLoad(
                 Bldr.CreateInBoundsGEP(io_map, Bldr.getInt64(IDX_ALPHA)));
 
-            if (ret == RET_INT) {
+            if (op->ret == RetTy::INT) {
               r = Bldr.CreateFPToSI(r, Bldr.getInt32Ty());
             }
             // ret == RET_DOUBLE: nop, already have a double
@@ -216,7 +172,8 @@ namespace {
 
           // delete old call
           call->eraseFromParent();
-
+            
+          // restore to last new instruction inserted... for loop will increment
           I = --next_inst;
           verifyFunction(F);
           modified = true;

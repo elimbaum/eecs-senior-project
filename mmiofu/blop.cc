@@ -1,61 +1,46 @@
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-#include <memory>
+#include "blop.hh"
+#include "blop_impl.cc"
 
-enum class RetTy {
-  VOID,
-  DOUBLE,
-  INT
-};
+std::map<std::string, BlasOperation *> BlasOperation::NameLU = {};
+std::map<int,         BlasOperation *> BlasOperation::IdLU = {};
 
-enum class Arg {
-  N,
-  ALPHA,
-  X,
-  Y
-};
+BlasOperation * BlasOperation::get(int index) {
+  auto it = IdLU.find(index);
+  if (it == IdLU.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
 
-// Need common function signature so call can work. But some arguments are
-// ignored by different functions.
-typedef double (*cblasfunc_t)(int N, double alpha, double * X, double * Y, int * latency);
+BlasOperation * BlasOperation::find(std::string name) {
+  auto it = NameLU.find(name);
+  if (it == NameLU.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
 
-class BlasOperation {
-  private:
-    // static fields
-    static std::map<std::string, BlasOperation*> NameLU;
-    static std::map<int,         BlasOperation*> IdLU;
-    
-    // member fields
-    std::string cblas_name;
-    cblasfunc_t func;
+BlasOperation::BlasOperation(std::string name, cblasfunc_t func, int id, RetTy ret, std::vector<Arg> argv) :
+  cblas_name(name), func(func), id(id), ret(ret), argv(argv)
+{
+  if (NameLU.count(name) > 0 || IdLU.count(id) > 0) {
+    std::cerr << name << " (" << id << "): Function already exists\n";
+    throw;
+  }
 
-    RetTy ret;
-    std::vector<Arg> argv;
-  
-  public:
-    static BlasOperation* get(int index) {
-      auto it = IdLU.find(index);
-      if (it == IdLU.end()) {
-        return nullptr;
-      }
-      return it->second;
-    }
+  NameLU.insert(std::make_pair(name, this));
+  IdLU.insert(std::make_pair(id, this));
+}
 
-    static BlasOperation* find(std::string name) {
-      auto it = NameLU.find(name);
-      if (it == NameLU.end()) {
-        return nullptr;
-      }
-      return it->second;
-    }
+void BlasOperation::init() {
+  // sequentially assign ids (but they need not be so)
+  int id = 0;
 
-    BlasOperation(std::string name, cblasfunc_t func, int index, RetTy ret, std::vector<Arg> argv) :
-      cblas_name(name), func(func), ret(ret), argv(std::move(argv))
-    {
-      NameLU[name] = this;
-      IdLU[index] = this;
-    }
-
-};
+  // declare new (on heap) so objects don't go out of scope
+  new BlasOperation("cblas_dscal",  &_dscal, id++, RetTy::VOID,   { Arg::N, Arg::ALPHA, Arg::X         });
+  new BlasOperation("cblas_daxpy",  &_dscal, id++, RetTy::VOID,   { Arg::N, Arg::ALPHA, Arg::Y, Arg::X });
+  new BlasOperation("cblas_ddot",   &_dscal, id++, RetTy::DOUBLE, { Arg::N,             Arg::X, Arg::Y });
+  new BlasOperation("cblas_dnrm2",  &_dscal, id++, RetTy::DOUBLE, { Arg::N,             Arg::X         });
+  new BlasOperation("cblas_dasum",  &_dscal, id++, RetTy::DOUBLE, { Arg::N,             Arg::X         });
+  /// BlasOperation("cblas_idamax", &_dscal, id++, RetTy::INT,    { Arg::N,             Arg::X         });
+}

@@ -27,11 +27,18 @@ class Reg {
       return value;
     }
 
+    void reset_stats() {
+      num_gets = 0;
+      num_sets = 0;
+    }
+
     void print_stats() {
-      cout << "Gets: " << num_gets << "; Sets: " << num_sets << "\n";
+      std::cout << "Gets: " << num_gets << "; Sets: " << num_sets << "\n";
     }
 
     int get_cycles() {
-      return SET_TIME * num_sets + GET_TIME * num_gets;
+      int c = SET_TIME * num_sets + GET_TIME * num_gets;
+      reset_stats();
+      return c;
     }
 };

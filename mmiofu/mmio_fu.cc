@@ -1,7 +1,7 @@
 #include "mmiofu/mmio_fu.hh"
 #include "debug/MMIOFU.hh"
 
-#include "blas_operation.h"
+#include "blop.h"
 
 extern blasop operations[];
 

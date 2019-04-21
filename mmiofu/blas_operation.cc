@@ -1,6 +1,4 @@
 #include <cmath>
-
-#include "blas_operation.h"
 #include "macc.h"
 
 double _dscal(int N, double alpha, double * X, double * Y, int * latency) {
@@ -14,8 +12,6 @@ double _dscal(int N, double alpha, double * X, double * Y, int * latency) {
     m.execute();
     X[i] = rX.get();
   }
-
-
 
   *latency = m.get_cycles() + rX.get_cycles() + rK.get_cycles();
 
@@ -87,7 +83,7 @@ double _dnrm2(int N, double alpha, double * X, double * Y, int * latency) {
   // In hardware, this is a simple bitshift
   int exp;
   double m = frexp(rS.get(), & exp);
-  rX.set(ldexp(m, exp / 2)); // 1 cycle
+  rX.set(ldexp(m, exp >> 1)); // div 2; 1 cycle
 
   mA.connect(&rX, &rS, &rR); // x + S/x
 
@@ -126,6 +122,7 @@ double _dasum(int N, double alpha, double * X, double * Y, int * latency) {
 //
 // this can't be done with Macc. what do?
 // might just forget this for the time being
+/*
 double _idamax(int N, double alpha, double * X, double * Y, int * latency) {
   cout << "idamax UNIMPL\n";
 
@@ -135,16 +132,4 @@ double _idamax(int N, double alpha, double * X, double * Y, int * latency) {
   *latency = N + N / 2;
   return cblas_idamax(N, X, INC_X);
 }
-
-// TODO make dict of these for lookup (name -> index) ???
-blasop operations[] = {
-  // name          returns/func pointer
-  {"cblas_dscal",  false, & _dscal  },
-  {"cblas_daxpy",  false, & _daxpy  },
-  {"cblas_ddot",   true,  & _ddot   },
-  {"cblas_dnrm2",  true,  & _dnrm2  },
-  {"cblas_dasum",  true,  & _dasum  },
-  {"cblas_idamax", true,  & _idamax },
-};
-
-// TODO put an init function in here? hardcode IDs?
+*/

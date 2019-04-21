@@ -19,9 +19,6 @@ using namespace std;
 // #define IDX_INCY     4
 #define IDX_START_X  3
 
-// TODO don't hardcode this
-#define NUM_FUNCS 6
-
 // Find out optimal value for this
 #define SQRT_ITERS 10
 

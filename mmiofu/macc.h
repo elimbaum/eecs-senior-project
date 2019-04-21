@@ -12,7 +12,12 @@ class Macc {
     // TODO keep internal stats for registers?
 
   public:
-    // TODO add constructor connect
+    // No connection constructor
+    Macc() { }
+
+    // default connection constructor
+    Macc(Reg * A, Reg * B, Reg * C) : A(A), B(B), C(C) { }
+
     bool connect(Reg * _A, Reg * _B, Reg * _C) {
       num_connects++;
       A = _A;
@@ -43,17 +48,22 @@ class Macc {
       return A->set(A->get() + B->get() * C->get());
     }
 
+    void reset_stats() {
+      num_execs = 0;
+      num_connects = 0;
+    }
+
     void print_stats() {
-      // TODO if multiple Maccs access the same registers, stats will overlap
-      // should be macc-local
-      cout << "A: "; A->print_stats();
-      cout << "B: "; B->print_stats();
-      cout << "C: "; C->print_stats();
-      cout << "Connects: " << num_connects << "\n";
-      cout << "Execs: " << num_execs << "\n";
+      std::cout << "A: "; A->print_stats();
+      std::cout << "B: "; B->print_stats();
+      std::cout << "C: "; C->print_stats();
+      std::cout << "Connects: " << num_connects << "\n";
+      std::cout << "Execs: " << num_execs << "\n";
     }
 
     int get_cycles() {
-      return CONNECT_TIME * num_connects + EXEC_TIME * num_execs;
+      int c = CONNECT_TIME * num_connects + EXEC_TIME * num_execs;
+      reset_stats();
+      return c;
     }
 };
