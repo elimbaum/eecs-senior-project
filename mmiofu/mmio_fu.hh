@@ -1,7 +1,7 @@
 #include "mem/mem_object.hh"
 #include "params/MMIOFU.hh"
 
-#include "blas_operation.h"
+#include "blop.hh"
 
 class MMIOFU : public MemObject
 {
@@ -66,18 +66,18 @@ class MMIOFU : public MemObject
 
     bool blocked;
 
-    blasop op;
+    BlasOperation * op;
     // TODO look in to this? might need more state variables
     bool dirty;
 
     int _N;
     double _alpha;
     // TODO these can be vectors, probably? then no need for alloc
-    double * _X;
-    double * _Y;
+    double * _X = nullptr;
+    double * _Y = nullptr;
 
   public:
-    MMIOFU(MMIOFUParams * params);
+    MMIOFU(MMIOFUParams * params); 
 
     BaseMasterPort& getMasterPort(const std::string& if_name,
                                   PortID idx = InvalidPortID) override;

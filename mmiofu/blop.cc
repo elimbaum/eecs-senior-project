@@ -28,6 +28,8 @@ BlasOperation::BlasOperation(std::string name, cblasfunc_t func, int id, RetTy r
     throw;
   }
 
+  std::cerr << "Creating " << name << ", id " << id << "\n";
+
   NameLU.insert(std::make_pair(name, this));
   IdLU.insert(std::make_pair(id, this));
 }
@@ -38,9 +40,9 @@ void BlasOperation::init() {
 
   // declare new (on heap) so objects don't go out of scope
   new BlasOperation("cblas_dscal",  &_dscal, id++, RetTy::VOID,   { Arg::N, Arg::ALPHA, Arg::X         });
-  new BlasOperation("cblas_daxpy",  &_dscal, id++, RetTy::VOID,   { Arg::N, Arg::ALPHA, Arg::Y, Arg::X });
-  new BlasOperation("cblas_ddot",   &_dscal, id++, RetTy::DOUBLE, { Arg::N,             Arg::X, Arg::Y });
-  new BlasOperation("cblas_dnrm2",  &_dscal, id++, RetTy::DOUBLE, { Arg::N,             Arg::X         });
-  new BlasOperation("cblas_dasum",  &_dscal, id++, RetTy::DOUBLE, { Arg::N,             Arg::X         });
+  new BlasOperation("cblas_daxpy",  &_daxpy, id++, RetTy::VOID,   { Arg::N, Arg::ALPHA, Arg::Y, Arg::X });
+  new BlasOperation("cblas_ddot",   &_ddot,  id++, RetTy::DOUBLE, { Arg::N,             Arg::X, Arg::Y });
+  new BlasOperation("cblas_dnrm2",  &_dnrm2, id++, RetTy::DOUBLE, { Arg::N,             Arg::X         });
+  new BlasOperation("cblas_dasum",  &_dasum, id++, RetTy::DOUBLE, { Arg::N,             Arg::X         });
   /// BlasOperation("cblas_idamax", &_dscal, id++, RetTy::INT,    { Arg::N,             Arg::X         });
 }

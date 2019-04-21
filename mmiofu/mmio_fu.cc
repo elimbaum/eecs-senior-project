@@ -1,16 +1,13 @@
 #include "mmiofu/mmio_fu.hh"
 #include "debug/MMIOFU.hh"
 
-#include "blop.h"
-
-extern blasop operations[];
-
 MMIOFU::MMIOFU(MMIOFUParams * params) :
   MemObject(params),
   cpuPort(params->name + ".cpu_side", this),
   memPort(params->name + ".mem_side", this),
   blocked(false)
 {
+  BlasOperation::init();
   DPRINTF(MMIOFU, "MMIOFU init\n");
 }
 
@@ -152,15 +149,15 @@ MMIOFU::handleRequest(PacketPtr pkt)
           int func_idx = (int)_func_idx;
           DPRINTF(MMIOFU, "Request for function %d\n", func_idx);
          
-          panic_if(func_idx >= NUM_FUNCS, "Invalid function number");
-          op = operations[(int) func_idx];
-          DPRINTF(MMIOFU, "... %s\n", op.cblas_name.c_str());
+          op = BlasOperation::get(func_idx);
+          panic_if(!op, "Invalid function number");
+          DPRINTF(MMIOFU, "... %s\n", op->cblas_name.c_str());
 
-          if (op.returns) {
-            _alpha = op.func(_N, _alpha, _X, _Y, &latency);
+          if (op->ret != RetTy::VOID) {
+            _alpha = op->func(_N, _alpha, _X, _Y, &latency);
             DPRINTF(MMIOFU, "ret: %d\n", _alpha);
           } else {
-            op.func(_N, _alpha, _X, _Y, &latency);
+            op->func(_N, _alpha, _X, _Y, &latency);
           }
           DPRINTF(MMIOFU, "latency: %d\n", latency);
         } else if (pkt->isRead()) {

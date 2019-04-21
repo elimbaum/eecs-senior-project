@@ -65,6 +65,7 @@ double _daxpy(int N, double alpha, double * X, double * Y, int * latency) {
 Macc M_ddot(&rRet, &rX, &rY);
 double _ddot(int N, double alpha, double * X, double * Y, int * latency) {
   std::cout << "hardware ddot\n";
+  rRet.set(0);
 
   for (int i = 0; i < N; i++) {
     rX.set(X[i]);
@@ -88,6 +89,8 @@ Macc M_sumsq(&rS,   &rX, &rX);
 Macc M_sqrt (&rRet, &rS, &rR);
 double _dnrm2(int N, double alpha, double * X, double * Y, int * latency) {
   std::cout << "hardware dnrm2\n";
+  rS.set(0);
+  rRet.set(0);
   
   // S = sum(x * x)
   // this is dot product, but we can save register operations by consolidating
@@ -118,7 +121,7 @@ double _dnrm2(int N, double alpha, double * X, double * Y, int * latency) {
     rRet.set(rRet.get() / 2); // 1 cycle
   }
 
-  double r = rX.get();
+  double r = rRet.get();
 
   // add extra cycles for 1/X and X/2 (per iter) and one for estimate
   *latency = M_sumsq.get_cycles() + M_sqrt.get_cycles() + rX.get_cycles() + 
@@ -135,6 +138,7 @@ Macc M_dasum(&rRet, &rX, &rK);
 double _dasum(int N, double alpha, double * X, double * Y, int * latency) {
   std::cout << "hardware dasum\n";
   rK.set(1);
+  rRet.set(0);
 
   for (int i = 0; i < N; i++) {
    // I'm thinking abs is not an extra cycle, since just sign bitset
