@@ -476,6 +476,16 @@ save connection times by creating a bunch of hard-wired MACCs for each function.
 - more than 4 parallel units, +1 cycle. After that, extra cycles proportional to log number of units: latency = $\log n /\log 4​$. For log base 2, $\log n / \log 4 = \log n / 2​$
 - load/stores/connects are 1 cycle. execute is 3 cycles.
 
+#### Testing
+
+Want to be able to test/compare each function. doesn’t need to be functional, per se, but i want to have reasonable backing.
+
+- angle between: uses dot and nrm
+- something with neural net - propagation function! that’s exactly it (with no bias). uses daxpy.
+- to test sum, could just add up vectors.
+
+
+
 ## Meeting Notes
 
 ### 30 Aug
@@ -667,6 +677,10 @@ SECOND component resides pre-TLB, gets addresses. careful: TLB miss. (page bound
 software square root reason why so many instructions?
 
 first slot: which function, then arguments.
+
+### 25 Apr
+
+Testing? Angle between vectors? Something with neural net – daxpy.
 
 ## Reading Notes
 
