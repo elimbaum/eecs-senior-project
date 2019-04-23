@@ -37,24 +37,14 @@ namespace {
       Bldr.CreateStore(dbl_arg, array_loc);
     }
 
-    void MemCpyWrapper(IRBuilder<> Bldr, Value * dest, Value * src, Value * len) {
-      // Compute size (in bytes) of the array. Thisis just len * sizeof(double)
-      Value * array_size =
-        Bldr.CreatePtrToInt(
-            Bldr.CreateInBoundsGEP(
-              ConstantPointerNull::get(Type::getDoublePtrTy(Bldr.getContext())), len),
-            Bldr.getInt32Ty());
-      Bldr.CreateMemCpy(dest, 0, src, 0, array_size);
-    }
-
     void recvVector(IRBuilder<> Bldr, Value * dest, Value * src_i, Value * len) {
       Value * src = Bldr.CreateInBoundsGEP(io_map, src_i);
-      MemCpyWrapper(Bldr, dest, src, len);
+      Bldr.CreateMemCpy(dest, 0, src, 0, len);
     }
 
     void sendVector(IRBuilder<> Bldr, Value * dest_i, Value * src, Value * len) {
       Value * dest = Bldr.CreateInBoundsGEP(io_map, dest_i);
-      MemCpyWrapper(Bldr, dest, src, len);
+      Bldr.CreateMemCpy(dest, 0, src, 0, len);
     }
 
 
@@ -123,6 +113,7 @@ namespace {
           Value * N;
           Value * user_X;
           Value * X_start_i = Bldr.getInt32(IDX_START_X);
+          Value * array_size_in_bytes;
 
           // loop through arguments
           // op->argv is the internal map for looking up signatures
@@ -134,14 +125,21 @@ namespace {
             if (*i == Arg::N) {
               N = arg->get();
               sendScalar(Bldr, IDX_N, N);
+              
+              // Compute size (in bytes) of the array. This is just N * sizeof(double)
+              array_size_in_bytes =
+                Bldr.CreatePtrToInt(
+                    Bldr.CreateInBoundsGEP(
+                      ConstantPointerNull::get(Type::getDoublePtrTy(Bldr.getContext())), N),
+                  Bldr.getInt32Ty());
             } else if (*i == Arg::ALPHA) {
               sendScalar(Bldr, IDX_ALPHA, arg->get());
             } else if (*i == Arg::X) {
               user_X = arg->get();
-              sendVector(Bldr, X_start_i, user_X, N);
+              sendVector(Bldr, X_start_i, user_X, array_size_in_bytes);
               ++arg; // eat INC_X
             } else if (*i == Arg::Y) {
-              sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), arg->get(), N);
+              sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), arg->get(), array_size_in_bytes);
               ++arg; // eat INC_Y
             }
           }
@@ -152,7 +150,7 @@ namespace {
 
           if (op->ret == RetTy::VOID) {
             // non-returning subroutines modify X; must copy back
-            recvVector(Bldr, user_X, X_start_i, N);
+            recvVector(Bldr, user_X, X_start_i, array_size_in_bytes);
           } else {
             // get result from alpha
             Value * r = Bldr.CreateLoad(
