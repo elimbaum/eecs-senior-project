@@ -16,7 +16,8 @@
 #define IDX_N        2
 #define IDX_START_X  3
 
-// Find out optimal value for this
+// TODO Find out optimal value for this
+// this is NOT a constant! for large S.
 #define SQRT_ITERS 10
 
 // TODO eventually, this shouldn't be hardcoded

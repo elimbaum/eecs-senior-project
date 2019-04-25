@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import math
+from math import sqrt, frexp, exp
 import sys
 import itertools
 
@@ -11,10 +11,13 @@ def mac(a, b, c):
     return a + b * c
 
 def b_sqrt(S):
-    x = 0
-    x = mac(x, S, 0.5)
+    m, e = frexp(S)
+    x = m * (2 ** (e / 2))
+    # print(S, "est", x, "actual", sqrt(S))
 
     _old_x = 0 # not actually part of the circuit
+
+    percent_off = 0
 
     # i is approximately the ceiling of the natural log of S
     for i in itertools.count():
@@ -25,10 +28,12 @@ def b_sqrt(S):
 
         # either can break when below some threshold, or set # of iterations
         # based on exponent of argument (can do this from floating point repr)
-        if (abs(_old_x - x)) < 1e-8: break
+        percent_off = x / sqrt(S) - 1
+        # if (abs(_old_x - x)) < 1e-8: break
+        if percent_off < 1e-10: break
 
-    print(S, "\t", i)
+    print(S, i)
     # print("correct:", math.sqrt(S), "(est {:.3}% off)".format(100 * (x / math.sqrt(S) - 1)))
 
-for i in range(1, 1000000):
+for i in itertools.count(1):
     b_sqrt(i)

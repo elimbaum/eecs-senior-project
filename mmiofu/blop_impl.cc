@@ -111,7 +111,7 @@ double _dnrm2(int N, double alpha, double * X, double * Y, int * latency) {
   // In hardware, this is a simple bitshift
   int exp;
   double m = frexp(rS.get(), & exp);
-  rRet.set(ldexp(m, exp >> 1)); // div 2; 1 cycle
+  rRet.set(ldexp(m, exp >> 1)); // div 2; 2 cycless
 
   // x_n+1 = (S + S / x_n) / 2
 
@@ -126,7 +126,7 @@ double _dnrm2(int N, double alpha, double * X, double * Y, int * latency) {
   // add extra cycles for 1/X and X/2 (per iter) and one for estimate
   *latency = M_sumsq.get_cycles() + M_sqrt.get_cycles() + rX.get_cycles() + 
              rS.get_cycles() + rR.get_cycles() + rRet.get_cycles() +
-             SQRT_ITERS * 3 + 1;
+             SQRT_ITERS * 3 + 2;
   return r;
 }
 

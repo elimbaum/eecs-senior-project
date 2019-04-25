@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define ITERS 100
-#define N     100
+#define ITERS 1000
+#define N     1000
 
 void print_array(double * array) {
   for (int i = 0; i < N; i++) {

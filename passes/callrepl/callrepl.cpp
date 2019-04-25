@@ -111,7 +111,7 @@ namespace {
           }
 
           Value * N;
-          Value * user_X;
+          Value * user_X, * user_Y;
           Value * X_start_i = Bldr.getInt32(IDX_START_X);
           Value * array_size_in_bytes;
 
@@ -139,7 +139,10 @@ namespace {
               sendVector(Bldr, X_start_i, user_X, array_size_in_bytes);
               ++arg; // eat INC_X
             } else if (*i == Arg::Y) {
-              sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), arg->get(), array_size_in_bytes);
+              user_Y = arg->get();
+              // TODO: if Y is the same array as X, don't resend.
+              errs() << "Y is X? " << (user_X->getValueName() == user_Y->getValueName()) << "\n";
+              sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), user_Y, array_size_in_bytes);
               ++arg; // eat INC_Y
             }
           }

@@ -44,7 +44,7 @@ class Macc {
         return A->set(A->get() + b * b);
       } else {
         return A->set(A->get() + B->get() * C->get());
-      } */
+      }*/
       return A->set(A->get() + B->get() * C->get());
     }
 
