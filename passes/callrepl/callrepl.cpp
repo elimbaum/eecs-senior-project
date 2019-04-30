@@ -141,7 +141,7 @@ namespace {
             } else if (*i == Arg::Y) {
               user_Y = arg->get();
               // TODO: if Y is the same array as X, don't resend.
-              errs() << "Y is X? " << (user_X->getValueName() == user_Y->getValueName()) << "\n";
+              // errs() << "Y is X? " << (user_X->getValueName() == user_Y->getValueName()) << "\n";
               sendVector(Bldr, Bldr.CreateAdd(X_start_i, N), user_Y, array_size_in_bytes);
               ++arg; // eat INC_Y
             }

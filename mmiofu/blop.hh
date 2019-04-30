@@ -16,9 +16,14 @@
 #define IDX_N        2
 #define IDX_START_X  3
 
-// TODO Find out optimal value for this
-// this is NOT a constant! for large S.
-#define SQRT_ITERS 10
+// How many iterations to run the Babylonian square root algorithm for.
+//
+// In general, this is NOT a constant! What works for small inputs will be off
+// for large inputs. However, by using the floating point estimate of the
+// square root (half exponent), we get an incredibly good estimate which
+// converges very quickly, and uniformly so. From my tests, 5 iterations
+// appears to be optimal; after that, the relative accuracy levels off.
+#define SQRT_ITERS 5
 
 // TODO eventually, this shouldn't be hardcoded
 #define INC_X 1
