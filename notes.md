@@ -28,6 +28,7 @@ Advisor: Rajit Manohar
 - [x] Determine protocol for sending commands/receiving data
 - [ ] shared memory: pre TLB virtual memory component
 - [ ] blocking memory / dirty bit?
+  - [ ] dirty bit might not be necessary since stores are deterministically ordered by pass
 
 
 ## Important Dates
@@ -40,9 +41,9 @@ Advisor: Rajit Manohar
 
 Amdahl's Law may limit the effectiveness of this project.
 
-$S = \frac{1}{(1-p) + \frac{p}{s}}$
+$S = \frac{1}{(1-p) + \frac{p}{s}}​$
 
-where $S$ is overall speedup, $p$ is proportion of time in critical section, and $s​$ is specific speedup.
+where $S​$ is overall speedup, $p​$ is proportion of time in critical section, and $s​$ is specific speedup.
 
 So if some component is run 1/2 time, and I speed it up 2x, that’s a 33% speedup. Not horrible.
 
@@ -94,6 +95,8 @@ Dynamic* Binary Translation for Optimized Functional Units DBTOFU i like that.
 
 C++ test programs won’t work easily because of name mangling. Probably not worth it, especially since makefile becomes messy.
 
+I did not make any significant local changes to gem5 or LLVM. Self-compilation was an unnecessary waste of time. :/
+
 ### Installing LLVM on Zoo
 
 - Install LLVM on zoo
@@ -143,7 +146,7 @@ can’t run the JIT in full system mode. other simple programs work.
 
 making progress getting all libraries set up. can’t find weird libm in /usr/lib64 even though exists elsewhere
 
-ok, got compilation to succeed with libm hack. but now _my_ kid won’t run in gem5. kernel versions different? might have to move over to AVLSI server.
+ok, got compilation to succeed with libm hack. but now _my_ kld won’t run in gem5. kernel versions different? might have to move over to AVLSI server.
 
 Internally-defined functions don’t work (putchard and printd) in static link. also now gem5 is crashing. bad memory address? might be the new non-debug LLVM, also. Rui’s still works, but also can’t handle putchard/printd. not priorities atm, but I will need those eventually. weird, however, that other externs like the math functions work just fine.
 
@@ -484,7 +487,7 @@ Want to be able to test/compare each function. doesn’t need to be functional, 
 - something with neural net - propagation function! that’s exactly it (with no bias). uses daxpy.
 - to test sum, could just add up vectors.
 
-
+ok, sqrt RELATIVE precision is something like $\log_2(x)/2+1$. Maybe try to derive this?
 
 ## Meeting Notes
 
@@ -668,7 +671,7 @@ final deliverable: presentation & research paper; include LLVM.
 
 Due dates?
 
-possibly attach BEFORE TLB. Because then everything is in virtual. this will make everything faster. only need to pass POINTER of array, in local process, to FU. look at the gem5 TLB. KEPP what i have right now. but also...
+possibly attach BEFORE TLB. Because then everything is in virtual. this will make everything faster. only need to pass POINTER of array, in local process, to FU. look at the gem5 TLB. KEEP what i have right now. but also...
 
 i need TWO components. one to “start” the FU. (this is physical, post TLB, mmap)
 
@@ -680,7 +683,19 @@ first slot: which function, then arguments.
 
 ### 25 Apr
 
-Testing? Angle between vectors? Something with neural net – daxpy.
+=> Testing? Angle between vectors? Something with neural net – daxpy.
+
+benchmark with different N. Should be a fixed percent, should not diverge.
+
+Doesn’t level 3 call level 1? compile Level 3 to LL. Or do LINPACK benchmarks ever call Level 1?
+
+Look on Grace? How good BLAS Is.
+
+graphics programs? neural network. MNIST?
+
+writeup: start out with problem, motivation. background & related work. summary of contributions. go into details. results, future work.
+
+report in by presentation.
 
 ## Reading Notes
 
@@ -1066,3 +1081,5 @@ http://gem5.org/Gem5_101
 maybe this will be good for me
 
 can’t build C file statically??? C++ works. use bit vector, not array.
+
+used this (part II) to implement FSQRT for BLAS.
