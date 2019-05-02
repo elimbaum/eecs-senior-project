@@ -248,6 +248,14 @@ sqrtfp st(0), st(0), st(0)
 
 Even though only two of those should be necessary. 
 
+To run DBTOFU,
+
+```
+gem5 --debug-flags=MMIOFU ~/sproj-git/sim/fs_mod.py --disk-image linux-x86.img --kernel=x86_64-vmlinux-3.4.112_b -r 1 --script PROGRAM_NAME --cpu-type TimingSimpleCPU
+```
+
+`PROGRAM_NAME` should be compiled with the `_edit` suffix specified in  `/blas/Makefile`.
+
 ### mmap
 
 reading mmap man page. then will start reserving IO, etc.
